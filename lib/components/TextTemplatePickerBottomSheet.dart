@@ -23,7 +23,7 @@ class TextTemplatePickerBottomSheetState
   }
 
   Future<void> init() async {
-    afterBuildCreated(() => appStore.setLoading(false));
+    // afterBuildCreated(() => appStore.setLoading(false));
   }
 
   @override

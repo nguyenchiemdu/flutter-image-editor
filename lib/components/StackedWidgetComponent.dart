@@ -4,7 +4,6 @@ import 'package:nb_utils/nb_utils.dart';
 import '../../models/StackedWidgetModel.dart';
 import '../../utils/Constants.dart';
 
-import '../main.dart';
 import 'PositionedNeonTextWidget.dart';
 import 'PositionedTextViewWidget.dart';
 import 'StackedItemConfigWidget.dart';
@@ -44,7 +43,7 @@ class StackedWidgetComponentState extends State<StackedWidgetComponent> {
               // if (data != null) {
               //   widget.multiWidget.remove(data);
               // }
-              appStore.isText = true;
+              // appStore.isText = true;
               setState(() {});
             },
             onPanUpdate: (details) {

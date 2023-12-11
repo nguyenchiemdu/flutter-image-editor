@@ -1,0 +1,3 @@
+class PhotoEditBloC {
+  void dispose() {}
+}

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
@@ -28,13 +27,8 @@ import '../../utils/Colors.dart';
 import '../../utils/Constants.dart';
 import '../../utils/SignatureLibWidget.dart';
 import '../components/TextTemplatePickerBottomSheet.dart';
-import '../main.dart';
-import '../models/BorderModel.dart';
-import '../models/UndoModel.dart';
 import '../utils/AppPermissionHandler.dart';
 import '../utils/Common.dart';
-import 'DashboardScreen.dart';
-import 'RemoveBackgroundScreen.dart';
 
 class PhotoEditScreen extends StatefulWidget {
   static String tag = '/PhotoEditScreen';
@@ -199,7 +193,7 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
   }
 
   Future<void> capture() async {
-    appStore.setLoading(true);
+    // appStore.setLoading(true);
 
     mIsBlurVisible = false;
     mIsFilterViewVisible = false;
@@ -226,9 +220,9 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
       log(e);
     });
 
-    appStore.setLoading(false);
+    // appStore.setLoading(false);
     // pop();
-    DashboardScreen().launch(context, isNewTask: true);
+    // DashboardScreen().launch(context, isNewTask: true);
   }
 
   void onEraserClick() {
@@ -273,8 +267,8 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
       outerBorderwidth = 0.0;
       innerBorderwidth = 0.0;
 
-      appStore.mStackedWidgetListundo = [];
-      appStore.mStackedWidgetListundo1 = [];
+      // appStore.mStackedWidgetListundo = [];
+      // appStore.mStackedWidgetListundo1 = [];
 
       setState(() {});
     });
@@ -290,7 +284,7 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
     mIsHueSliderVisible = false;
     mIsContrastSliderVisible = false;
     mIsText = true;
-    appStore.isText = true;
+    // appStore.isText = true;
     mIsBorderSliderVisible = false;
 
     setState(() {});
@@ -310,14 +304,14 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
       mStackedWidgetList.add(
         stackedWidgetModel,
       );
-      appStore.addUndoList(
-          undoModel: UndoModel(
-              type: 'mStackedWidgetList', widget: stackedWidgetModel));
+      // appStore.addUndoList(
+      //     undoModel: UndoModel(
+      //         type: 'mStackedWidgetList', widget: stackedWidgetModel));
 
       setState(() {});
     } else {
       mIsText = false;
-      appStore.isText = false;
+      // appStore.isText = false;
       setState(() {});
     }
   }
@@ -332,7 +326,7 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
     mIsHueSliderVisible = false;
     mIsContrastSliderVisible = false;
     mIsText = true;
-    appStore.isText = true;
+    // appStore.isText = true;
     mIsBorderSliderVisible = false;
 
     setState(() {});
@@ -350,9 +344,9 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
         textColor: getColorFromHex('#FF7B00AB'),
       );
       mStackedWidgetList.add(stackedWidgetModel);
-      appStore.addUndoList(
-          undoModel: UndoModel(
-              type: 'mStackedWidgetList', widget: stackedWidgetModel));
+      // appStore.addUndoList(
+      //     undoModel: UndoModel(
+      //         type: 'mStackedWidgetList', widget: stackedWidgetModel));
       setState(() {});
     }
   }
@@ -370,7 +364,7 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
 
     setState(() {});
 
-    appStore.setLoading(true);
+    // appStore.setLoading(true);
     await 300.milliseconds.delay;
     if (!mounted) return;
     String? emoji = await showModalBottomSheet(
@@ -386,9 +380,9 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
         size: 50,
       );
       mStackedWidgetList.add(stackedWidgetModel);
-      appStore.addUndoList(
-          undoModel: UndoModel(
-              type: 'mStackedWidgetList', widget: stackedWidgetModel));
+      // appStore.addUndoList(
+      //     undoModel: UndoModel(
+      //         type: 'mStackedWidgetList', widget: stackedWidgetModel));
 
       setState(() {});
     }
@@ -407,7 +401,7 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
 
     setState(() {});
 
-    appStore.setLoading(true);
+    // appStore.setLoading(true);
     await 300.milliseconds.delay;
     if (!mounted) return;
     String? sticker = await showModalBottomSheet(
@@ -422,9 +416,9 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
           offset: const Offset(100, 100),
           size: 100);
       mStackedWidgetList.add(stackedWidgetModel);
-      appStore.addUndoList(
-          undoModel: UndoModel(
-              type: 'mStackedWidgetList', widget: stackedWidgetModel));
+      // appStore.addUndoList(
+      //     undoModel: UndoModel(
+      //         type: 'mStackedWidgetList', widget: stackedWidgetModel));
       setState(() {});
     }
   }
@@ -564,9 +558,9 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
         size: 120,
         shape: BoxShape.circle);
     mStackedWidgetList.add(stackedWidgetModel);
-    appStore.addUndoList(
-        undoModel:
-            UndoModel(type: 'mStackedWidgetList', widget: stackedWidgetModel));
+    // appStore.addUndoList(
+    //     undoModel:
+    //         UndoModel(type: 'mStackedWidgetList', widget: stackedWidgetModel));
 
     setState(() {});
   }
@@ -598,9 +592,9 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
           fontSize: 16,
           value: text);
       mStackedWidgetList.add(stackedWidgetModel);
-      appStore.addUndoList(
-          undoModel: UndoModel(
-              type: 'mStackedWidgetList', widget: stackedWidgetModel));
+      // appStore.addUndoList(
+      //     undoModel: UndoModel(
+      //         type: 'mStackedWidgetList', widget: stackedWidgetModel));
     }
     setState(() {});
   }
@@ -752,181 +746,183 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
                                   negativeText: 'Cancel',
                                   onAccept: (BuildContext context) async {
                                 mIsText = false;
-                                appStore.isText = false;
+                                // appStore.isText = false;
                                 Navigator.pop(context);
                               });
                             },
                             icon: const Icon(Icons.close),
                           ),
                           IconButton(
-                                  onPressed: () {
-                                    if (appStore.mStackedWidgetListundo1.last
-                                            .type ==
-                                        'mStackedWidgetList') {
-                                      mIsText = false;
-                                      appStore.isText = false;
-                                      mStackedWidgetList.removeLast();
-                                    } else if (appStore.mStackedWidgetListundo1
-                                            .last.type ==
-                                        'filter') {
-                                      filter = null;
-                                    } else if (appStore.mStackedWidgetListundo1
-                                            .last.type ==
-                                        'blur') {
-                                      blur = 0;
-                                    } else if (appStore.mStackedWidgetListundo1
-                                            .last.type ==
-                                        'frame') {
-                                      frame = null;
-                                    } else if (appStore.mStackedWidgetListundo1
-                                            .last.type ==
-                                        'brightness') {
-                                      brightness = 0;
-                                    } else if (appStore.mStackedWidgetListundo1
-                                            .last.type ==
-                                        'saturation') {
-                                      saturation = 0;
-                                    } else if (appStore.mStackedWidgetListundo1
-                                            .last.type ==
-                                        'hue') {
-                                      hue = 0;
-                                    } else if (appStore.mStackedWidgetListundo1
-                                            .last.type ==
-                                        'contrast') {
-                                      contrast = 0;
-                                    } else if (appStore.mStackedWidgetListundo1
-                                            .last.type ==
-                                        'border') {
-                                      // print("------------------------------------------_____________________________");
-                                      // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo1.last.border!.type!}");
-                                      // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo1.last.border!.width!}");
-                                      // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo1.last.border!.borderColor!}");
-                                      if (appStore.mStackedWidgetListundo1.last
-                                              .border!.type ==
-                                          'outer') {
-                                        outerBorderwidth = appStore
-                                            .mStackedWidgetListundo1
-                                            .last
-                                            .border!
-                                            .width!;
-                                        outerBorderColor = appStore
-                                            .mStackedWidgetListundo1
-                                            .last
-                                            .border!
-                                            .borderColor!;
-                                      } else {
-                                        innerBorderwidth = appStore
-                                            .mStackedWidgetListundo1
-                                            .last
-                                            .border!
-                                            .width!;
-                                        innerBorderColor = appStore
-                                            .mStackedWidgetListundo1
-                                            .last
-                                            .border!
-                                            .borderColor!;
-                                      }
-                                    }
-                                    appStore.addRedoList(
-                                        undoModel: appStore
-                                            .mStackedWidgetListundo1.last);
-                                    appStore.removeUndoList();
-                                    setState(() {});
-                                  },
-                                  icon: const Icon(Icons.undo))
-                              .visible(
-                                  appStore.mStackedWidgetListundo1.length != 0),
+                              onPressed: () {
+                                // if (appStore.mStackedWidgetListundo1.last
+                                //         .type ==
+                                //     'mStackedWidgetList') {
+                                //   mIsText = false;
+                                //   appStore.isText = false;
+                                //   mStackedWidgetList.removeLast();
+                                // } else if (appStore.mStackedWidgetListundo1
+                                //         .last.type ==
+                                //     'filter') {
+                                //   filter = null;
+                                // } else if (appStore.mStackedWidgetListundo1
+                                //         .last.type ==
+                                //     'blur') {
+                                //   blur = 0;
+                                // } else if (appStore.mStackedWidgetListundo1
+                                //         .last.type ==
+                                //     'frame') {
+                                //   frame = null;
+                                // } else if (appStore.mStackedWidgetListundo1
+                                //         .last.type ==
+                                //     'brightness') {
+                                //   brightness = 0;
+                                // } else if (appStore.mStackedWidgetListundo1
+                                //         .last.type ==
+                                //     'saturation') {
+                                //   saturation = 0;
+                                // } else if (appStore.mStackedWidgetListundo1
+                                //         .last.type ==
+                                //     'hue') {
+                                //   hue = 0;
+                                // } else if (appStore.mStackedWidgetListundo1
+                                //         .last.type ==
+                                //     'contrast') {
+                                //   contrast = 0;
+                                // } else if (appStore.mStackedWidgetListundo1
+                                //         .last.type ==
+                                //     'border') {
+                                //   // print("------------------------------------------_____________________________");
+                                //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo1.last.border!.type!}");
+                                //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo1.last.border!.width!}");
+                                //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo1.last.border!.borderColor!}");
+                                //   if (appStore.mStackedWidgetListundo1.last
+                                //           .border!.type ==
+                                //       'outer') {
+                                //     outerBorderwidth = appStore
+                                //         .mStackedWidgetListundo1
+                                //         .last
+                                //         .border!
+                                //         .width!;
+                                //     outerBorderColor = appStore
+                                //         .mStackedWidgetListundo1
+                                //         .last
+                                //         .border!
+                                //         .borderColor!;
+                                //   } else {
+                                //     innerBorderwidth = appStore
+                                //         .mStackedWidgetListundo1
+                                //         .last
+                                //         .border!
+                                //         .width!;
+                                //     innerBorderColor = appStore
+                                //         .mStackedWidgetListundo1
+                                //         .last
+                                //         .border!
+                                //         .borderColor!;
+                                //   }
+                                // }
+                                // appStore.addRedoList(
+                                //     undoModel: appStore
+                                //         .mStackedWidgetListundo1.last);
+                                // appStore.removeUndoList();
+                                setState(() {});
+                              },
+                              icon: const Icon(Icons.undo))
+                          // .visible(
+                          //     appStore.mStackedWidgetListundo1.length != 0),
+                          ,
                           IconButton(
-                                  onPressed: () {
-                                    // mStackedWidgetList.add(mStackedWidgetListundo.last);
-                                    // mStackedWidgetListundo.removeLast();
-                                    if (appStore
-                                            .mStackedWidgetListundo.last.type ==
-                                        'mStackedWidgetList') {
-                                      mStackedWidgetList.add(appStore
-                                          .mStackedWidgetListundo.last.widget!);
-                                      if (appStore.mStackedWidgetListundo.last
-                                              .type ==
-                                          'text') {
-                                        mIsText = true;
-                                        appStore.isText = true;
-                                      }
-                                    } else if (appStore
-                                            .mStackedWidgetListundo.last.type ==
-                                        'filter') {
-                                      filter = appStore
-                                          .mStackedWidgetListundo.last.filter;
-                                    } else if (appStore
-                                            .mStackedWidgetListundo.last.type ==
-                                        'blur') {
-                                      blur = appStore
-                                          .mStackedWidgetListundo.last.number!;
-                                    } else if (appStore
-                                            .mStackedWidgetListundo.last.type ==
-                                        'frame') {
-                                      frame = appStore
-                                          .mStackedWidgetListundo.last.data;
-                                    } else if (appStore
-                                            .mStackedWidgetListundo.last.type ==
-                                        'brightness') {
-                                      brightness = appStore
-                                          .mStackedWidgetListundo.last.number!;
-                                    } else if (appStore
-                                            .mStackedWidgetListundo.last.type ==
-                                        'saturation') {
-                                      saturation = appStore
-                                          .mStackedWidgetListundo.last.number!;
-                                    } else if (appStore
-                                            .mStackedWidgetListundo.last.type ==
-                                        'hue') {
-                                      hue = appStore
-                                          .mStackedWidgetListundo.last.number!;
-                                    } else if (appStore
-                                            .mStackedWidgetListundo.last.type ==
-                                        'contrast') {
-                                      contrast = appStore
-                                          .mStackedWidgetListundo.last.number!;
-                                    } else if (appStore
-                                            .mStackedWidgetListundo.last.type ==
-                                        'border') {
-                                      // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo.last.border!.type!}");
-                                      // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo.last.border!.width!}");
-                                      // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo.last.border!.borderColor!}");
-                                      if (appStore.mStackedWidgetListundo.last
-                                              .border!.type ==
-                                          'outer') {
-                                        outerBorderwidth = appStore
-                                            .mStackedWidgetListundo
-                                            .last
-                                            .border!
-                                            .width!;
-                                        outerBorderColor = appStore
-                                            .mStackedWidgetListundo
-                                            .last
-                                            .border!
-                                            .borderColor!;
-                                      } else {
-                                        innerBorderwidth = appStore
-                                            .mStackedWidgetListundo
-                                            .last
-                                            .border!
-                                            .width!;
-                                        innerBorderColor = appStore
-                                            .mStackedWidgetListundo
-                                            .last
-                                            .border!
-                                            .borderColor!;
-                                      }
-                                    }
-                                    appStore.addUndoList(
-                                        undoModel: appStore
-                                            .mStackedWidgetListundo.last);
-                                    appStore.removeRedoList();
-                                    setState(() {});
-                                  },
-                                  icon: const Icon(Icons.redo))
-                              .visible(
-                                  appStore.mStackedWidgetListundo.length != 0)
+                              onPressed: () {
+                                // mStackedWidgetList.add(mStackedWidgetListundo.last);
+                                // mStackedWidgetListundo.removeLast();
+                                // if (appStore
+                                //         .mStackedWidgetListundo.last.type ==
+                                //     'mStackedWidgetList') {
+                                //   mStackedWidgetList.add(appStore
+                                //       .mStackedWidgetListundo.last.widget!);
+                                //   if (appStore.mStackedWidgetListundo.last
+                                //           .type ==
+                                //       'text') {
+                                //     mIsText = true;
+                                //     appStore.isText = true;
+                                //   }
+                                // } else if (appStore
+                                //         .mStackedWidgetListundo.last.type ==
+                                //     'filter') {
+                                //   filter = appStore
+                                //       .mStackedWidgetListundo.last.filter;
+                                // } else if (appStore
+                                //         .mStackedWidgetListundo.last.type ==
+                                //     'blur') {
+                                //   blur = appStore
+                                //       .mStackedWidgetListundo.last.number!;
+                                // } else if (appStore
+                                //         .mStackedWidgetListundo.last.type ==
+                                //     'frame') {
+                                //   frame = appStore
+                                //       .mStackedWidgetListundo.last.data;
+                                // } else if (appStore
+                                //         .mStackedWidgetListundo.last.type ==
+                                //     'brightness') {
+                                //   brightness = appStore
+                                //       .mStackedWidgetListundo.last.number!;
+                                // } else if (appStore
+                                //         .mStackedWidgetListundo.last.type ==
+                                //     'saturation') {
+                                //   saturation = appStore
+                                //       .mStackedWidgetListundo.last.number!;
+                                // } else if (appStore
+                                //         .mStackedWidgetListundo.last.type ==
+                                //     'hue') {
+                                //   hue = appStore
+                                //       .mStackedWidgetListundo.last.number!;
+                                // } else if (appStore
+                                //         .mStackedWidgetListundo.last.type ==
+                                //     'contrast') {
+                                //   contrast = appStore
+                                //       .mStackedWidgetListundo.last.number!;
+                                // } else if (appStore
+                                //         .mStackedWidgetListundo.last.type ==
+                                //     'border') {
+                                //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo.last.border!.type!}");
+                                //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo.last.border!.width!}");
+                                //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo.last.border!.borderColor!}");
+                                //   if (appStore.mStackedWidgetListundo.last
+                                //           .border!.type ==
+                                //       'outer') {
+                                //     outerBorderwidth = appStore
+                                //         .mStackedWidgetListundo
+                                //         .last
+                                //         .border!
+                                //         .width!;
+                                //     outerBorderColor = appStore
+                                //         .mStackedWidgetListundo
+                                //         .last
+                                //         .border!
+                                //         .borderColor!;
+                                //   } else {
+                                //     innerBorderwidth = appStore
+                                //         .mStackedWidgetListundo
+                                //         .last
+                                //         .border!
+                                //         .width!;
+                                //     innerBorderColor = appStore
+                                //         .mStackedWidgetListundo
+                                //         .last
+                                //         .border!
+                                //         .borderColor!;
+                                //   }
+                                // }
+                                // appStore.addUndoList(
+                                //     undoModel: appStore
+                                //         .mStackedWidgetListundo.last);
+                                // appStore.removeRedoList();
+                                setState(() {});
+                              },
+                              icon: const Icon(Icons.redo))
+                          // .visible(
+                          //     appStore.mStackedWidgetListundo.length != 0)
+                          ,
                         ],
                       ),
                       Row(
@@ -986,8 +982,8 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
                             mIsText
                                 ? setState(() {
                                     mIsText = false;
-                                    appStore.isText = false;
-                                    appStore.isText = false;
+                                    // appStore.isText = false;
+                                    // appStore.isText = false;
                                     mIsTextstyle = false;
                                     mIsTextColor = false;
                                     mIsTextBgColor = false;
@@ -1163,9 +1159,9 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
                                 },
                                 value: brightness,
                                 onChangeEnd: (d) {
-                                  appStore.addUndoList(
-                                      undoModel: UndoModel(
-                                          type: 'brightness', number: d));
+                                  // appStore.addUndoList(
+                                  //     undoModel: UndoModel(
+                                  //         type: 'brightness', number: d));
                                   setState(() {});
                                 },
                               ).expand(),
@@ -1353,17 +1349,17 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
                                       ? outerBorderColor = c
                                       : innerBorderColor = c;
                                   setState(() {});
-                                  appStore.addUndoList(
-                                      undoModel: UndoModel(
-                                          type: 'border',
-                                          border: BorderModel(
-                                              type: isOuterBorder
-                                                  ? 'outer'
-                                                  : 'inner',
-                                              width: isOuterBorder
-                                                  ? outerBorderwidth
-                                                  : innerBorderwidth,
-                                              borderColor: c)));
+                                  // appStore.addUndoList(
+                                  //     undoModel: UndoModel(
+                                  //         type: 'border',
+                                  //         border: BorderModel(
+                                  //             type: isOuterBorder
+                                  //                 ? 'outer'
+                                  //                 : 'inner',
+                                  //             width: isOuterBorder
+                                  //                 ? outerBorderwidth
+                                  //                 : innerBorderwidth,
+                                  //             borderColor: c)));
                                 },
                               ).visible(outerBorderwidth != 0 ||
                                   innerBorderwidth != 0),
@@ -1424,20 +1420,20 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
                                         ? outerBorderwidth
                                         : innerBorderwidth,
                                     onChangeEnd: (d) {
-                                      appStore.addUndoList(
-                                          undoModel: UndoModel(
-                                              type: 'border',
-                                              border: BorderModel(
-                                                  type: isOuterBorder
-                                                      ? 'outer'
-                                                      : 'inner',
-                                                  width: d,
-                                                  borderColor: isOuterBorder
-                                                      ? outerBorderColor
-                                                      : innerBorderColor)));
-                                      setState(() {});
-                                      appStore.mStackedWidgetListundo1
-                                          .forEach((element) {});
+                                      // appStore.addUndoList(
+                                      //     undoModel: UndoModel(
+                                      //         type: 'border',
+                                      //         border: BorderModel(
+                                      //             type: isOuterBorder
+                                      //                 ? 'outer'
+                                      //                 : 'inner',
+                                      //             width: d,
+                                      //             borderColor: isOuterBorder
+                                      //                 ? outerBorderColor
+                                      //                 : innerBorderColor)));
+                                      // setState(() {});
+                                      // appStore.mStackedWidgetListundo1
+                                      //     .forEach((element) {});
                                     },
                                   ).expand(),
                                 ],
@@ -1469,9 +1465,9 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
                                 },
                                 value: contrast,
                                 onChangeEnd: (d) {
-                                  appStore.addUndoList(
-                                      undoModel: UndoModel(
-                                          type: 'contrast', number: d));
+                                  // appStore.addUndoList(
+                                  //     undoModel: UndoModel(
+                                  //         type: 'contrast', number: d));
                                   setState(() {});
                                 },
                               ).expand(),
@@ -1502,9 +1498,9 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
                                 },
                                 value: saturation,
                                 onChangeEnd: (d) {
-                                  appStore.addUndoList(
-                                      undoModel: UndoModel(
-                                          type: 'saturation', number: d));
+                                  // appStore.addUndoList(
+                                  //     undoModel: UndoModel(
+                                  //         type: 'saturation', number: d));
                                   setState(() {});
                                 },
                               ).expand(),
@@ -1535,10 +1531,10 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
                                 },
                                 value: hue,
                                 onChangeEnd: (d) {
-                                  appStore.addUndoList(
-                                      undoModel:
-                                          UndoModel(type: 'hue', number: d));
-                                  setState(() {});
+                                  // appStore.addUndoList(
+                                  //     undoModel:
+                                  //         UndoModel(type: 'hue', number: d));
+                                  // setState(() {});
                                 },
                               ).expand(),
                             ],
@@ -1556,9 +1552,9 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
                             freeImage: croppedFileFree,
                             onSelect: (v) {
                               filter = v;
-                              appStore.addUndoList(
-                                  undoModel:
-                                      UndoModel(type: 'filter', filter: v));
+                              // appStore.addUndoList(
+                              //     undoModel:
+                              //         UndoModel(type: 'filter', filter: v));
                               setState(() {});
                             }),
                       ),
@@ -1570,8 +1566,8 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
                         child: FrameSelectionWidget(onSelect: (v) {
                           frame = v;
                           if (v.isEmpty) frame = null;
-                          appStore.addUndoList(
-                              undoModel: UndoModel(type: 'frame', data: v));
+                          // appStore.addUndoList(
+                          //     undoModel: UndoModel(type: 'frame', data: v));
                           setState(() {});
                         }),
                       ),
@@ -1588,9 +1584,9 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
                             setState(() {});
                           },
                           onColorSelectedEnd: (p0) {
-                            appStore.addUndoList(
-                                undoModel: UndoModel(type: 'blur', number: p0));
-                            setState(() {});
+                            // appStore.addUndoList(
+                            //     undoModel: UndoModel(type: 'blur', number: p0));
+                            // setState(() {});
                           },
                         ),
                       ),
@@ -1698,8 +1694,9 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
                                           .icon,
                                   onTap: () => onFrameClick()),
                             ],
-                          ).visible(
-                              mIsText == false && appStore.isText == false),
+                          ).visible(mIsText == false
+                              //  && appStore.isText == false
+                              ),
                           ListView(
                             controller: scrollController,
                             scrollDirection: Axis.horizontal,
@@ -1763,17 +1760,19 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
                                     mIsTextBgColor = false;
                                     mIsTextSize = false;
                                     mStackedWidgetList.removeLast();
-                                    appStore.removeUndoList();
-                                    appStore.mStackedWidgetListundo1
-                                        .removeLast();
-                                    mIsText = false;
-                                    appStore.isText = false;
+                                    // appStore.removeUndoList();
+                                    // appStore.mStackedWidgetListundo1
+                                    //     .removeLast();
+                                    // mIsText = false;
+                                    // appStore.isText = false;
                                     setState(() {});
                                   },
                                 )),
                               ),
                             ],
-                          ).visible(mIsText || appStore.isText),
+                          ).visible(mIsText
+                              // || appStore.isText
+                              ),
                           // Positioned(
                           //   child: AnimatedCrossFade(
                           //       firstChild: Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey),
@@ -1789,7 +1788,7 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
                 ),
               ],
             ).paddingTop(context.statusBarHeight),
-            Observer(builder: (_) => Loader().visible(appStore.isLoading)),
+            // Observer(builder: (_) => Loader().visible(appStore.isLoading)),
           ],
         ),
       ),

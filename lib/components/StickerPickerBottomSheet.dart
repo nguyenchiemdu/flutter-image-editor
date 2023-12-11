@@ -22,7 +22,7 @@ class StickerPickerBottomSheetState extends State<StickerPickerBottomSheet> {
   }
 
   Future<void> init() async {
-    afterBuildCreated(() => appStore.setLoading(false));
+    // afterBuildCreated(() => appStore.setLoading(false));
   }
 
   @override
