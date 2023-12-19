@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:image_editor/blocs/image_state.dart';
+import 'package:image_editor/blocs/photo_edit_blocs.dart';
+import 'package:image_editor/screens/photo_preview.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nb_utils/nb_utils.dart';
+import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 
 import '../../components/BlurSelectorBottomSheet.dart';
@@ -15,12 +18,8 @@ import '../../components/ColorSelectorBottomSheet.dart';
 import '../../components/EmojiPickerBottomSheet.dart';
 import '../../components/FilterSelectionWidget.dart';
 import '../../components/FrameSelectionWidget.dart';
-import '../../components/ImageFilterWidget.dart';
-import '../../components/SignatureWidget.dart';
-import '../../components/StackedWidgetComponent.dart';
 import '../../components/StickerPickerBottomSheet.dart';
 import '../../components/TextEditorDialog.dart';
-import '../../models/ColorFilterModel.dart';
 import '../../models/StackedWidgetModel.dart';
 import '../../services/FileService.dart';
 import '../../utils/Colors.dart';
@@ -36,13 +35,15 @@ class PhotoEditScreen extends StatefulWidget {
   final bool isFreePhoto;
   final String? freeImage;
 
-  PhotoEditScreen({this.file, this.isFreePhoto = false, this.freeImage});
+  const PhotoEditScreen(
+      {super.key, this.file, this.isFreePhoto = false, this.freeImage});
 
   @override
   PhotoEditScreenState createState() => PhotoEditScreenState();
 }
 
 class PhotoEditScreenState extends State<PhotoEditScreen> {
+  late final _bloC = context.read<PhotoEditBloC>();
   final GlobalKey scaffoldKey = GlobalKey<ScaffoldState>();
   final GlobalKey key = GlobalKey<PhotoEditScreenState>();
   final ScrollController scrollController = ScrollController();
@@ -54,29 +55,14 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
   /// Used to save edited image on storage
   ScreenshotController screenshotController = ScreenshotController();
   final GlobalKey screenshotKey = GlobalKey();
-  final GlobalKey imageKey = GlobalKey();
   final GlobalKey galleryKey = GlobalKey();
 
   /// Used to draw on image
-  SignatureController signatureController =
-      SignatureController(penStrokeWidth: 5, penColor: Colors.green);
-  List<Offset> points = [];
-
-  /// Texts on image
-  List<StackedWidgetModel> mStackedWidgetList = [];
+  // SignatureController signatureController =
+  //     SignatureController(penStrokeWidth: 5, penColor: Colors.green);
 
   // List<UndoModel> appStore.mStackedWidgetListundo1 = [];
   // List<UndoModel> mStackedWidgetListundo = [];
-
-  /// Image file picked from previous screen
-  File? originalFile;
-  File? croppedFile;
-
-  /// Image file picked from previous screen
-  String? originalFileFree;
-  String? croppedFileFree;
-
-  double topWidgetHeight = 50, bottomWidgetHeight = 80, blur = 0;
 
   /// Variables used to show or hide bottom widgets
   bool mIsPenColorVisible = false,
@@ -97,24 +83,6 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
   bool mIsPremium = false;
   bool mIsText = false;
   bool mIsBorderSliderVisible = false;
-
-  /// Selected color filter
-  ColorFilterModel? filter;
-
-  double brightness = 0.0, saturation = 0.0, hue = 0.0, contrast = 0.0;
-
-  /// Selected frame
-  String? frame;
-
-  ///Border
-  bool isOuterBorder = true;
-  double outerBorderwidth = 0.0;
-  Color outerBorderColor = Colors.black;
-  double innerBorderwidth = 0.0;
-  Color innerBorderColor = Colors.black;
-
-  double? imageHeight;
-  double? imageWidth;
 
   void pickImageSource(ImageSource imageSource) {
     // pickImage(imageSource: imageSource).then((value) async {
@@ -152,26 +120,36 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
   }
 
   Future<void> getImageSize() async {
+    final imageState = _bloC.imageStateCtrl.value;
     await Future.delayed(const Duration(seconds: 2));
-    imageHeight = imageKey.currentContext!.size!.height;
-    imageWidth = imageKey.currentContext!.size!.width;
+    imageState.imageHeight = imageState.imageKey.currentContext!.size!.height;
+    imageState.imageWidth = imageState.imageKey.currentContext!.size!.width;
     if (!mounted) return;
-    if ((imageHeight ?? 0).toInt() == 0) {
-      imageHeight = context.height();
+    if ((imageState.imageHeight ?? 0).toInt() == 0) {
+      imageState.imageHeight = context.height();
     }
-    if ((imageWidth ?? 0).toInt() == 0) {
-      imageWidth = context.width();
+    if ((imageState.imageWidth ?? 0).toInt() == 0) {
+      imageState.imageWidth = context.width();
     }
     setState(() {});
+    imageState.imageHeight = imageState.imageHeight;
+    imageState.imageWidth = imageState.imageWidth;
+    _bloC.imageStateCtrl.add(imageState);
   }
 
   Future<void> init() async {
+    final ImageState imageState = ImageState()
+      ..imageKey = GlobalKey()
+      ..points = []
+      ..mStackedWidgetList = [];
     if (widget.isFreePhoto) {
-      originalFileFree = widget.freeImage;
-      croppedFileFree = widget.freeImage;
+      imageState
+        ..originalFileFree = widget.freeImage
+        ..croppedFileFree = widget.freeImage;
     } else {
-      originalFile = widget.file;
-      croppedFile = widget.file;
+      imageState
+        ..originalFile = widget.file
+        ..croppedFile = widget.file;
     }
 
     scrollController.addListener(() {
@@ -184,6 +162,7 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
 
       setState(() {});
     });
+    _bloC.imageStateCtrl.add(imageState);
   }
 
   Future<void> checkPermissionAndCaptureImage() async {
@@ -242,35 +221,28 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
       mIsBorderSliderVisible = false;
 
       /// Clear signature
-      signatureController.clear();
-      points.clear();
+      _bloC.clearSignature();
 
       /// Clear stacked widgets
-      mStackedWidgetList.clear();
+      _bloC.clearStackedWidgets();
 
       /// Clear filter
-      filter = null;
+      _bloC.clearFilter();
 
       /// Clear blur effect
-      blur = 0;
+      _bloC.clearBlur();
 
       /// Clear frame
-      frame = null;
+      _bloC.clearFrame();
 
       /// Clear brightness, contrast, saturation, hue
-      brightness = 0.0;
-      saturation = 0.0;
-      hue = 0.0;
-      contrast = 0.0;
+      _bloC.clearBrightnessContrastSaturationHue();
 
       ///Border
-      outerBorderwidth = 0.0;
-      innerBorderwidth = 0.0;
+      _bloC.clearBorder();
 
       // appStore.mStackedWidgetListundo = [];
       // appStore.mStackedWidgetListundo1 = [];
-
-      setState(() {});
     });
   }
 
@@ -301,9 +273,7 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
         backgroundColor: Colors.transparent,
         textColor: Colors.white,
       );
-      mStackedWidgetList.add(
-        stackedWidgetModel,
-      );
+      _bloC.addText(stackedWidgetModel);
       // appStore.addUndoList(
       //     undoModel: UndoModel(
       //         type: 'mStackedWidgetList', widget: stackedWidgetModel));
@@ -343,7 +313,7 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
         backgroundColor: Colors.transparent,
         textColor: getColorFromHex('#FF7B00AB'),
       );
-      mStackedWidgetList.add(stackedWidgetModel);
+      _bloC.addText(stackedWidgetModel);
       // appStore.addUndoList(
       //     undoModel: UndoModel(
       //         type: 'mStackedWidgetList', widget: stackedWidgetModel));
@@ -379,7 +349,7 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
         offset: const Offset(100, 100),
         size: 50,
       );
-      mStackedWidgetList.add(stackedWidgetModel);
+      _bloC.addText(stackedWidgetModel);
       // appStore.addUndoList(
       //     undoModel: UndoModel(
       //         type: 'mStackedWidgetList', widget: stackedWidgetModel));
@@ -415,7 +385,7 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
           widgetType: WidgetTypeSticker,
           offset: const Offset(100, 100),
           size: 100);
-      mStackedWidgetList.add(stackedWidgetModel);
+      _bloC.addText(stackedWidgetModel);
       // appStore.addUndoList(
       //     undoModel: UndoModel(
       //         type: 'mStackedWidgetList', widget: stackedWidgetModel));
@@ -557,7 +527,7 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
         offset: const Offset(100, 100),
         size: 120,
         shape: BoxShape.circle);
-    mStackedWidgetList.add(stackedWidgetModel);
+    _bloC.addText(stackedWidgetModel);
     // appStore.addUndoList(
     //     undoModel:
     //         UndoModel(type: 'mStackedWidgetList', widget: stackedWidgetModel));
@@ -591,7 +561,7 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
           size: 120,
           fontSize: 16,
           value: text);
-      mStackedWidgetList.add(stackedWidgetModel);
+      _bloC.addText(stackedWidgetModel);
       // appStore.addUndoList(
       //     undoModel: UndoModel(
       //         type: 'mStackedWidgetList', widget: stackedWidgetModel));
@@ -697,7 +667,6 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
   @override
   void dispose() {
     super.dispose();
-    signatureController.dispose();
     scrollController.dispose();
   }
 
@@ -723,1075 +692,913 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
       child: Scaffold(
         key: scaffoldKey,
         resizeToAvoidBottomInset: false,
-        body: Stack(
-          children: [
-            Column(
-              children: [
-                Container(
-                  height: topWidgetHeight,
-                  alignment: Alignment.center,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        body: StreamBuilder<ImageState>(
+            stream: _bloC.imageStateStream,
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const SizedBox();
+              final imageState = snapshot.data!;
+              return Stack(
+                children: [
+                  Column(
                     children: [
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              showConfirmDialogCustom(context,
-                                  title: 'You edited image will be lost',
-                                  primaryColor: colorPrimary,
-                                  positiveText: 'Ok',
-                                  negativeText: 'Cancel',
-                                  onAccept: (BuildContext context) async {
-                                mIsText = false;
-                                // appStore.isText = false;
-                                Navigator.pop(context);
-                              });
-                            },
-                            icon: const Icon(Icons.close),
-                          ),
-                          IconButton(
-                              onPressed: () {
-                                // if (appStore.mStackedWidgetListundo1.last
-                                //         .type ==
-                                //     'mStackedWidgetList') {
-                                //   mIsText = false;
-                                //   appStore.isText = false;
-                                //   mStackedWidgetList.removeLast();
-                                // } else if (appStore.mStackedWidgetListundo1
-                                //         .last.type ==
-                                //     'filter') {
-                                //   filter = null;
-                                // } else if (appStore.mStackedWidgetListundo1
-                                //         .last.type ==
-                                //     'blur') {
-                                //   blur = 0;
-                                // } else if (appStore.mStackedWidgetListundo1
-                                //         .last.type ==
-                                //     'frame') {
-                                //   frame = null;
-                                // } else if (appStore.mStackedWidgetListundo1
-                                //         .last.type ==
-                                //     'brightness') {
-                                //   brightness = 0;
-                                // } else if (appStore.mStackedWidgetListundo1
-                                //         .last.type ==
-                                //     'saturation') {
-                                //   saturation = 0;
-                                // } else if (appStore.mStackedWidgetListundo1
-                                //         .last.type ==
-                                //     'hue') {
-                                //   hue = 0;
-                                // } else if (appStore.mStackedWidgetListundo1
-                                //         .last.type ==
-                                //     'contrast') {
-                                //   contrast = 0;
-                                // } else if (appStore.mStackedWidgetListundo1
-                                //         .last.type ==
-                                //     'border') {
-                                //   // print("------------------------------------------_____________________________");
-                                //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo1.last.border!.type!}");
-                                //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo1.last.border!.width!}");
-                                //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo1.last.border!.borderColor!}");
-                                //   if (appStore.mStackedWidgetListundo1.last
-                                //           .border!.type ==
-                                //       'outer') {
-                                //     outerBorderwidth = appStore
-                                //         .mStackedWidgetListundo1
-                                //         .last
-                                //         .border!
-                                //         .width!;
-                                //     outerBorderColor = appStore
-                                //         .mStackedWidgetListundo1
-                                //         .last
-                                //         .border!
-                                //         .borderColor!;
-                                //   } else {
-                                //     innerBorderwidth = appStore
-                                //         .mStackedWidgetListundo1
-                                //         .last
-                                //         .border!
-                                //         .width!;
-                                //     innerBorderColor = appStore
-                                //         .mStackedWidgetListundo1
-                                //         .last
-                                //         .border!
-                                //         .borderColor!;
-                                //   }
-                                // }
-                                // appStore.addRedoList(
-                                //     undoModel: appStore
-                                //         .mStackedWidgetListundo1.last);
-                                // appStore.removeUndoList();
-                                setState(() {});
-                              },
-                              icon: const Icon(Icons.undo))
-                          // .visible(
-                          //     appStore.mStackedWidgetListundo1.length != 0),
-                          ,
-                          IconButton(
-                              onPressed: () {
-                                // mStackedWidgetList.add(mStackedWidgetListundo.last);
-                                // mStackedWidgetListundo.removeLast();
-                                // if (appStore
-                                //         .mStackedWidgetListundo.last.type ==
-                                //     'mStackedWidgetList') {
-                                //   mStackedWidgetList.add(appStore
-                                //       .mStackedWidgetListundo.last.widget!);
-                                //   if (appStore.mStackedWidgetListundo.last
-                                //           .type ==
-                                //       'text') {
-                                //     mIsText = true;
-                                //     appStore.isText = true;
-                                //   }
-                                // } else if (appStore
-                                //         .mStackedWidgetListundo.last.type ==
-                                //     'filter') {
-                                //   filter = appStore
-                                //       .mStackedWidgetListundo.last.filter;
-                                // } else if (appStore
-                                //         .mStackedWidgetListundo.last.type ==
-                                //     'blur') {
-                                //   blur = appStore
-                                //       .mStackedWidgetListundo.last.number!;
-                                // } else if (appStore
-                                //         .mStackedWidgetListundo.last.type ==
-                                //     'frame') {
-                                //   frame = appStore
-                                //       .mStackedWidgetListundo.last.data;
-                                // } else if (appStore
-                                //         .mStackedWidgetListundo.last.type ==
-                                //     'brightness') {
-                                //   brightness = appStore
-                                //       .mStackedWidgetListundo.last.number!;
-                                // } else if (appStore
-                                //         .mStackedWidgetListundo.last.type ==
-                                //     'saturation') {
-                                //   saturation = appStore
-                                //       .mStackedWidgetListundo.last.number!;
-                                // } else if (appStore
-                                //         .mStackedWidgetListundo.last.type ==
-                                //     'hue') {
-                                //   hue = appStore
-                                //       .mStackedWidgetListundo.last.number!;
-                                // } else if (appStore
-                                //         .mStackedWidgetListundo.last.type ==
-                                //     'contrast') {
-                                //   contrast = appStore
-                                //       .mStackedWidgetListundo.last.number!;
-                                // } else if (appStore
-                                //         .mStackedWidgetListundo.last.type ==
-                                //     'border') {
-                                //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo.last.border!.type!}");
-                                //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo.last.border!.width!}");
-                                //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo.last.border!.borderColor!}");
-                                //   if (appStore.mStackedWidgetListundo.last
-                                //           .border!.type ==
-                                //       'outer') {
-                                //     outerBorderwidth = appStore
-                                //         .mStackedWidgetListundo
-                                //         .last
-                                //         .border!
-                                //         .width!;
-                                //     outerBorderColor = appStore
-                                //         .mStackedWidgetListundo
-                                //         .last
-                                //         .border!
-                                //         .borderColor!;
-                                //   } else {
-                                //     innerBorderwidth = appStore
-                                //         .mStackedWidgetListundo
-                                //         .last
-                                //         .border!
-                                //         .width!;
-                                //     innerBorderColor = appStore
-                                //         .mStackedWidgetListundo
-                                //         .last
-                                //         .border!
-                                //         .borderColor!;
-                                //   }
-                                // }
-                                // appStore.addUndoList(
-                                //     undoModel: appStore
-                                //         .mStackedWidgetListundo.last);
-                                // appStore.removeRedoList();
-                                setState(() {});
-                              },
-                              icon: const Icon(Icons.redo))
-                          // .visible(
-                          //     appStore.mStackedWidgetListundo.length != 0)
-                          ,
-                        ],
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          if (!widget.isFreePhoto)
-                            IconButton(
-                              padding: EdgeInsets.zero,
-                              icon: const Icon(Icons.crop),
-                              onPressed: () async {
-                                if (widget.isFreePhoto) {
-                                  cropImage(
-                                      isFreePhoto: widget.isFreePhoto,
-                                      networkImage: originalFileFree!,
-                                      onDone: (file) {
-                                        croppedFile = file;
-                                        getImageSize();
-                                        setState(() {});
-                                      }).catchError(log);
-                                } else {
-                                  cropImage(
-                                      imageFile: originalFile!,
-                                      onDone: (file) {
-                                        croppedFile = file;
-                                        getImageSize();
-                                        setState(() {});
-                                      }).catchError(log);
-                                }
-                              },
-                            ).withTooltip(msg: 'Crop'),
-                          0.width,
-                          GestureDetector(
-                            onTap: () => log('tap'),
-                            onTapDown: (v) {
-                              mShowBeforeImage = true;
-                              setState(() {});
-                            },
-                            onTapUp: (v) {
-                              mShowBeforeImage = false;
-                              setState(() {});
-                            },
-                            onTapCancel: () {
-                              mShowBeforeImage = false;
-                              setState(() {});
-                            },
-                            child:
-                                const Icon(Icons.compare_rounded).paddingAll(0),
-                          ),
-                          // 16.width,
-                          Text(mIsText ? 'Done' : 'Save',
-                                  style: boldTextStyle(color: colorPrimary))
-                              .paddingSymmetric(horizontal: 16, vertical: 8)
-                              .withShaderMaskGradient(const LinearGradient(
-                                  colors: [itemGradient1, itemGradient2]))
-                              .onTap(() async {
-                            mIsText
-                                ? setState(() {
-                                    mIsText = false;
-                                    // appStore.isText = false;
-                                    // appStore.isText = false;
-                                    mIsTextstyle = false;
-                                    mIsTextColor = false;
-                                    mIsTextBgColor = false;
-                                    mIsTextSize = false;
-                                  })
-                                : checkPermissionAndCaptureImage();
-                          }, borderRadius: radius())
-                        ],
-                      ),
-                    ],
-                  ).paddingTop(0),
-                ),
-                Stack(
-                  alignment: AlignmentDirectional.center,
-                  children: [
-                    // This widget will be saved as edited Image
-                    Screenshot(
-                      controller: screenshotController,
-                      key: screenshotKey,
-                      child: SizedBox(
-                        height: imageHeight,
-                        width: imageWidth,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            (filter != null && filter!.matrix != null)
-                                ? ColorFiltered(
-                                    colorFilter:
-                                        ColorFilter.matrix(filter!.matrix!),
-                                    child: Center(
-                                      child: ImageFilterWidget(
-                                        brightness: brightness,
-                                        saturation: saturation,
-                                        hue: hue,
-                                        contrast: contrast,
-                                        child: widget.isFreePhoto
-                                            ? cachedImage(croppedFileFree!,
-                                                fit: BoxFit.fitWidth)
-                                            : Image.file(croppedFile!,
-                                                fit: BoxFit.fitWidth),
-                                      ),
-                                    ),
-                                  )
-                                : Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      Container(
-                                        decoration: BoxDecoration(
-                                            border: Border.all(
-                                                width: outerBorderwidth,
-                                                color: outerBorderColor)),
-                                        child: ImageFilterWidget(
-                                          brightness: brightness,
-                                          saturation: saturation,
-                                          hue: hue,
-                                          contrast: contrast,
-                                          child: Stack(
-                                            alignment: Alignment.center,
-                                            children: [
-                                              widget.isFreePhoto
-                                                  ? cachedImage(
-                                                      croppedFileFree!,
-                                                      fit: BoxFit.fitWidth,
-                                                      key: imageKey)
-                                                  : Image.file(croppedFile!,
-                                                      fit: BoxFit.fitWidth,
-                                                      key: imageKey),
-                                              Container(
-                                                  decoration: BoxDecoration(
-                                                      border: Border.all(
-                                                          color:
-                                                              innerBorderColor
-                                                                  .withOpacity(
-                                                                      0.5),
-                                                          width:
-                                                              innerBorderwidth)))
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      if (filter != null &&
-                                          filter!.color != null)
-                                        Container(
-                                          height: imageHeight,
-                                          width: imageWidth,
-                                          color: Colors.black12,
-                                        ).withShaderMaskGradient(
-                                          LinearGradient(
-                                              colors: filter!.color!,
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight),
-                                          blendMode: BlendMode.srcOut,
-                                        ),
-                                    ],
-                                  ),
-                            ClipRRect(
-                              child: BackdropFilter(
-                                filter: ui.ImageFilter.blur(
-                                    sigmaX: blur, sigmaY: blur),
-                                child: Container(
-                                    alignment: Alignment.center,
-                                    color: Colors.grey.withOpacity(0.1)),
-                              ),
-                            ),
-                            /*(filter != null && filter!.color != null)
-                                ? Container(
-                                    //height: context.height(),
-                                    width: context.width(),
-                                    color: Colors.black12,
-                                    child: SizedBox(),
-                                  ).withShaderMaskGradient(
-                                    LinearGradient(colors: filter!.color!, begin: Alignment.topLeft, end: Alignment.bottomRight),
-                                    blendMode: BlendMode.srcOut,
-                                  )
-                                : SizedBox(),*/
-                            frame != null
-                                ? Container(
-                                    color: Colors.black12,
-                                    child: Image.asset(frame!,
-                                        fit: BoxFit.fill,
-                                        height: context.height(),
-                                        width: context.width()),
-                                  )
-                                : const SizedBox(),
-                            IgnorePointer(
-                              ignoring: !mIsPenEnabled,
-                              child: SignatureWidget(
-                                signatureController: signatureController,
-                                points: points,
-                                width: context.width(),
-                                height: context.height() * 0.8,
-                              ),
-                            ),
-                            StackedWidgetComponent(mStackedWidgetList),
-                          ],
-                        ).center(),
-                      ),
-                    ),
-
-                    /// Show preview of edited image before save
-                    if (widget.isFreePhoto)
-                      cachedImage(croppedFileFree!,
-                              fit: BoxFit.fitWidth, key: imageKey)
-                          .visible(mShowBeforeImage),
-                    if (!widget.isFreePhoto)
-                      Image.file(croppedFile!, fit: BoxFit.cover)
-                          .visible(!widget.isFreePhoto)
-                          .visible(mShowBeforeImage),
-                  ],
-                ).expand(),
-                Column(
-                  children: [
-                    if (mIsBrightnessSliderVisible)
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        height: mIsBrightnessSliderVisible ? 60 : 0,
-                        width: context.width(),
-                        color: Colors.grey.shade100,
-                        child: Container(
-                          color: Colors.white38,
-                          height: 60,
-                          child: Row(
-                            children: [
-                              8.width,
-                              const Text('Brightness'),
-                              8.width,
-                              Slider(
-                                min: 0.0,
-                                max: 1.0,
-                                onChanged: (d) {
-                                  brightness = d;
-                                  setState(() {});
-                                },
-                                value: brightness,
-                                onChangeEnd: (d) {
-                                  // appStore.addUndoList(
-                                  //     undoModel: UndoModel(
-                                  //         type: 'brightness', number: d));
-                                  setState(() {});
-                                },
-                              ).expand(),
-                            ],
-                          ),
-                        ),
-                      ),
-                    if (mIsPenColorVisible)
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        height: mIsPenColorVisible ? 60 : 0,
-                        color: Colors.grey.shade100,
-                        width: context.width(),
-                        child: Row(
-                          children: [
-                            Switch(
-                              value: mIsPenEnabled,
-                              onChanged: (b) {
-                                mIsPenEnabled = b;
-                                mIsPenColorVisible = false;
-                                setState(() {});
-                              },
-                            ),
-                            ColorSelectorBottomSheet(
-                              list: penColors,
-                              onColorSelected: (Color color) {
-                                List<Point> tempPoints =
-                                    signatureController.points;
-                                signatureController = SignatureController(
-                                    penStrokeWidth: 4, penColor: color);
-
-                                tempPoints.forEach((element) {
-                                  signatureController.addPoint(element);
-                                });
-
-                                mIsPenColorVisible = false;
-                                mIsPenEnabled = true;
-
-                                setState(() {});
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (mIsTextColor)
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        height: 40,
-                        color: Colors.grey.shade100,
-                        width: context.width(),
-                        child: Row(
-                          children: [
-                            ColorSelectorBottomSheet(
-                              list: textColors,
-                              selectedColor: mStackedWidgetList.last.textColor,
-                              onColorSelected: (c) {
-                                mStackedWidgetList.last.textColor = c;
-                                setState(() {});
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (mIsTextBgColor)
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        height: 40,
-                        color: Colors.grey.shade100,
+                      Container(
+                        height: imageState.topWidgetHeight,
                         alignment: Alignment.center,
-                        width: context.width(),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 0, vertical: 0),
                         child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            ColorSelectorBottomSheet(
-                              list: textColors,
-                              selectedColor:
-                                  mStackedWidgetList.last.backgroundColor,
-                              onColorSelected: (c) {
-                                mStackedWidgetList.last.backgroundColor = c;
-                                setState(() {});
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (mIsTextSize)
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        margin: const EdgeInsets.only(left: 16, bottom: 8),
-                        height: 30,
-                        color: Colors.grey.shade100,
-                        width: context.width(),
-                        child: Stack(
-                          alignment: Alignment.centerLeft,
-                          children: [
-                            Slider(
-                              value: mStackedWidgetList.last.size
-                                  .validate(value: 16),
-                              min: 10.0,
-                              max: 100.0,
-                              onChangeEnd: (v) {
-                                mStackedWidgetList.last.size = v;
-
-                                setState(() {});
-                              },
-                              onChanged: (v) {
-                                mStackedWidgetList.last.size = v;
-
-                                setState(() {});
-                              },
-                            ).paddingLeft(16),
-                            Text('${mStackedWidgetList.last.size!.toInt()}' +
-                                '%'),
-                          ],
-                        ),
-                      ),
-                    if (mIsTextstyle)
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        height: 40,
-                        alignment: Alignment.centerLeft,
-                        margin: const EdgeInsets.only(left: 16),
-                        width: context.width(),
-                        color: Colors.white,
-                        child: Wrap(
-                          spacing: 16,
-                          runSpacing: 16,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: mStackedWidgetList.last.fontStyle ==
-                                      FontStyle.normal
-                                  ? BoxDecoration(
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.black))
-                                  : null,
-                              child: Text('Normal', style: boldTextStyle())
-                                  .onTap(() {
-                                mStackedWidgetList.last.fontStyle =
-                                    FontStyle.normal;
-                                mIsTextstyle = false;
-                                setState(() {});
-                              }),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: mStackedWidgetList.last.fontStyle ==
-                                      FontStyle.italic
-                                  ? BoxDecoration(
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.black))
-                                  : null,
-                              child: Text('Italic',
-                                      style: boldTextStyle(
-                                          fontStyle: FontStyle.italic))
-                                  .onTap(() {
-                                mStackedWidgetList.last.fontStyle =
-                                    FontStyle.italic;
-                                mIsTextstyle = false;
-                                setState(() {});
-                              }),
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (mIsBorderSliderVisible)
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        height: (outerBorderwidth != 0 || innerBorderwidth != 0)
-                            ? 130
-                            : 84,
-                        width: context.width(),
-                        color: Colors.grey.shade100,
-                        child: Container(
-                          color: Colors.white38,
-                          child: Column(
-                            children: [
-                              6.height.visible(outerBorderwidth != 0.0),
-                              ColorSelectorBottomSheet(
-                                list: textColors,
-                                selectedColor: isOuterBorder
-                                    ? outerBorderColor
-                                    : innerBorderColor,
-                                onColorSelected: (c) {
-                                  isOuterBorder
-                                      ? outerBorderColor = c
-                                      : innerBorderColor = c;
-                                  setState(() {});
-                                  // appStore.addUndoList(
-                                  //     undoModel: UndoModel(
-                                  //         type: 'border',
-                                  //         border: BorderModel(
-                                  //             type: isOuterBorder
-                                  //                 ? 'outer'
-                                  //                 : 'inner',
-                                  //             width: isOuterBorder
-                                  //                 ? outerBorderwidth
-                                  //                 : innerBorderwidth,
-                                  //             borderColor: c)));
-                                },
-                              ).visible(outerBorderwidth != 0 ||
-                                  innerBorderwidth != 0),
-                              (outerBorderwidth != 0 || innerBorderwidth != 0)
-                                  ? 16.height
-                                  : 6.height,
-                              Row(children: [
-                                8.width,
-                                InkWell(
-                                    onTap: () => setState(() {
-                                          isOuterBorder = true;
-                                        }),
-                                    child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(6),
-                                            color: isOuterBorder
-                                                ? Colors.lightBlueAccent
-                                                    .withOpacity(0.5)
-                                                : null),
-                                        child: Text("Outer",
-                                            style: primaryTextStyle()))),
-                                16.width,
-                                InkWell(
-                                    onTap: () => setState(() {
-                                          isOuterBorder = false;
-                                        }),
-                                    child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(6),
-                                            color: isOuterBorder == false
-                                                ? Colors.lightBlueAccent
-                                                    .withOpacity(0.5)
-                                                : null),
-                                        child: Text("Inner",
-                                            style: primaryTextStyle())))
-                              ]),
-                              Row(
-                                children: [
-                                  8.width,
-                                  const Text('Border'),
-                                  8.width,
-                                  Slider(
-                                    min: 0.0,
-                                    max: 50,
-                                    onChanged: (d) {
-                                      isOuterBorder
-                                          ? outerBorderwidth = d
-                                          : innerBorderwidth = d;
+                            Row(
+                              children: [
+                                IconButton(
+                                  onPressed: () {
+                                    showConfirmDialogCustom(context,
+                                        title: 'You edited image will be lost',
+                                        primaryColor: colorPrimary,
+                                        positiveText: 'Ok',
+                                        negativeText: 'Cancel',
+                                        onAccept: (BuildContext context) async {
+                                      mIsText = false;
+                                      // appStore.isText = false;
+                                      Navigator.pop(context);
+                                    });
+                                  },
+                                  icon: const Icon(Icons.close),
+                                ),
+                                IconButton(
+                                    onPressed: () {
+                                      // if (appStore.mStackedWidgetListundo1.last
+                                      //         .type ==
+                                      //     'mStackedWidgetList') {
+                                      //   mIsText = false;
+                                      //   appStore.isText = false;
+                                      //   mStackedWidgetList.removeLast();
+                                      // } else if (appStore.mStackedWidgetListundo1
+                                      //         .last.type ==
+                                      //     'filter') {
+                                      //   filter = null;
+                                      // } else if (appStore.mStackedWidgetListundo1
+                                      //         .last.type ==
+                                      //     'blur') {
+                                      //   blur = 0;
+                                      // } else if (appStore.mStackedWidgetListundo1
+                                      //         .last.type ==
+                                      //     'frame') {
+                                      //   frame = null;
+                                      // } else if (appStore.mStackedWidgetListundo1
+                                      //         .last.type ==
+                                      //     'brightness') {
+                                      //   brightness = 0;
+                                      // } else if (appStore.mStackedWidgetListundo1
+                                      //         .last.type ==
+                                      //     'saturation') {
+                                      //   saturation = 0;
+                                      // } else if (appStore.mStackedWidgetListundo1
+                                      //         .last.type ==
+                                      //     'hue') {
+                                      //   hue = 0;
+                                      // } else if (appStore.mStackedWidgetListundo1
+                                      //         .last.type ==
+                                      //     'contrast') {
+                                      //   contrast = 0;
+                                      // } else if (appStore.mStackedWidgetListundo1
+                                      //         .last.type ==
+                                      //     'border') {
+                                      //   // print("------------------------------------------_____________________________");
+                                      //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo1.last.border!.type!}");
+                                      //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo1.last.border!.width!}");
+                                      //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo1.last.border!.borderColor!}");
+                                      //   if (appStore.mStackedWidgetListundo1.last
+                                      //           .border!.type ==
+                                      //       'outer') {
+                                      //     outerBorderwidth = appStore
+                                      //         .mStackedWidgetListundo1
+                                      //         .last
+                                      //         .border!
+                                      //         .width!;
+                                      //     outerBorderColor = appStore
+                                      //         .mStackedWidgetListundo1
+                                      //         .last
+                                      //         .border!
+                                      //         .borderColor!;
+                                      //   } else {
+                                      //     innerBorderwidth = appStore
+                                      //         .mStackedWidgetListundo1
+                                      //         .last
+                                      //         .border!
+                                      //         .width!;
+                                      //     innerBorderColor = appStore
+                                      //         .mStackedWidgetListundo1
+                                      //         .last
+                                      //         .border!
+                                      //         .borderColor!;
+                                      //   }
+                                      // }
+                                      // appStore.addRedoList(
+                                      //     undoModel: appStore
+                                      //         .mStackedWidgetListundo1.last);
+                                      // appStore.removeUndoList();
                                       setState(() {});
                                     },
-                                    value: isOuterBorder
-                                        ? outerBorderwidth
-                                        : innerBorderwidth,
-                                    onChangeEnd: (d) {
+                                    icon: const Icon(Icons.undo))
+                                // .visible(
+                                //     appStore.mStackedWidgetListundo1.length != 0),
+                                ,
+                                IconButton(
+                                    onPressed: () {
+                                      // mStackedWidgetList.add(mStackedWidgetListundo.last);
+                                      // mStackedWidgetListundo.removeLast();
+                                      // if (appStore
+                                      //         .mStackedWidgetListundo.last.type ==
+                                      //     'mStackedWidgetList') {
+                                      //   mStackedWidgetList.add(appStore
+                                      //       .mStackedWidgetListundo.last.widget!);
+                                      //   if (appStore.mStackedWidgetListundo.last
+                                      //           .type ==
+                                      //       'text') {
+                                      //     mIsText = true;
+                                      //     appStore.isText = true;
+                                      //   }
+                                      // } else if (appStore
+                                      //         .mStackedWidgetListundo.last.type ==
+                                      //     'filter') {
+                                      //   filter = appStore
+                                      //       .mStackedWidgetListundo.last.filter;
+                                      // } else if (appStore
+                                      //         .mStackedWidgetListundo.last.type ==
+                                      //     'blur') {
+                                      //   blur = appStore
+                                      //       .mStackedWidgetListundo.last.number!;
+                                      // } else if (appStore
+                                      //         .mStackedWidgetListundo.last.type ==
+                                      //     'frame') {
+                                      //   frame = appStore
+                                      //       .mStackedWidgetListundo.last.data;
+                                      // } else if (appStore
+                                      //         .mStackedWidgetListundo.last.type ==
+                                      //     'brightness') {
+                                      //   brightness = appStore
+                                      //       .mStackedWidgetListundo.last.number!;
+                                      // } else if (appStore
+                                      //         .mStackedWidgetListundo.last.type ==
+                                      //     'saturation') {
+                                      //   saturation = appStore
+                                      //       .mStackedWidgetListundo.last.number!;
+                                      // } else if (appStore
+                                      //         .mStackedWidgetListundo.last.type ==
+                                      //     'hue') {
+                                      //   hue = appStore
+                                      //       .mStackedWidgetListundo.last.number!;
+                                      // } else if (appStore
+                                      //         .mStackedWidgetListundo.last.type ==
+                                      //     'contrast') {
+                                      //   contrast = appStore
+                                      //       .mStackedWidgetListundo.last.number!;
+                                      // } else if (appStore
+                                      //         .mStackedWidgetListundo.last.type ==
+                                      //     'border') {
+                                      //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo.last.border!.type!}");
+                                      //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo.last.border!.width!}");
+                                      //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo.last.border!.borderColor!}");
+                                      //   if (appStore.mStackedWidgetListundo.last
+                                      //           .border!.type ==
+                                      //       'outer') {
+                                      //     outerBorderwidth = appStore
+                                      //         .mStackedWidgetListundo
+                                      //         .last
+                                      //         .border!
+                                      //         .width!;
+                                      //     outerBorderColor = appStore
+                                      //         .mStackedWidgetListundo
+                                      //         .last
+                                      //         .border!
+                                      //         .borderColor!;
+                                      //   } else {
+                                      //     innerBorderwidth = appStore
+                                      //         .mStackedWidgetListundo
+                                      //         .last
+                                      //         .border!
+                                      //         .width!;
+                                      //     innerBorderColor = appStore
+                                      //         .mStackedWidgetListundo
+                                      //         .last
+                                      //         .border!
+                                      //         .borderColor!;
+                                      //   }
+                                      // }
                                       // appStore.addUndoList(
-                                      //     undoModel: UndoModel(
-                                      //         type: 'border',
-                                      //         border: BorderModel(
-                                      //             type: isOuterBorder
-                                      //                 ? 'outer'
-                                      //                 : 'inner',
-                                      //             width: d,
-                                      //             borderColor: isOuterBorder
-                                      //                 ? outerBorderColor
-                                      //                 : innerBorderColor)));
-                                      // setState(() {});
-                                      // appStore.mStackedWidgetListundo1
-                                      //     .forEach((element) {});
+                                      //     undoModel: appStore
+                                      //         .mStackedWidgetListundo.last);
+                                      // appStore.removeRedoList();
+                                      setState(() {});
                                     },
-                                  ).expand(),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    if (mIsContrastSliderVisible)
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        height: mIsContrastSliderVisible ? 60 : 0,
-                        width: context.width(),
-                        color: Colors.grey.shade100,
-                        child: Container(
-                          color: Colors.white38,
-                          height: 60,
-                          child: Row(
-                            children: [
-                              8.width,
-                              const Text('Contrast'),
-                              8.width,
-                              Slider(
-                                min: 0.0,
-                                max: 1.0,
-                                onChanged: (d) {
-                                  contrast = d;
-                                  setState(() {});
-                                },
-                                value: contrast,
-                                onChangeEnd: (d) {
-                                  // appStore.addUndoList(
-                                  //     undoModel: UndoModel(
-                                  //         type: 'contrast', number: d));
-                                  setState(() {});
-                                },
-                              ).expand(),
-                            ],
-                          ),
-                        ),
-                      ),
-                    if (mIsSaturationSliderVisible)
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        height: mIsSaturationSliderVisible ? 60 : 0,
-                        width: context.width(),
-                        color: Colors.grey.shade100,
-                        child: Container(
-                          color: Colors.white38,
-                          height: 60,
-                          child: Row(
-                            children: [
-                              8.width,
-                              const Text('Saturation'),
-                              8.width,
-                              Slider(
-                                min: 0.0,
-                                max: 1.0,
-                                onChanged: (d) {
-                                  saturation = d;
-                                  setState(() {});
-                                },
-                                value: saturation,
-                                onChangeEnd: (d) {
-                                  // appStore.addUndoList(
-                                  //     undoModel: UndoModel(
-                                  //         type: 'saturation', number: d));
-                                  setState(() {});
-                                },
-                              ).expand(),
-                            ],
-                          ),
-                        ),
-                      ),
-                    if (mIsHueSliderVisible)
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        height: mIsHueSliderVisible ? 60 : 0,
-                        width: context.width(),
-                        color: Colors.grey.shade100,
-                        child: Container(
-                          color: Colors.white38,
-                          height: 60,
-                          child: Row(
-                            children: [
-                              8.width,
-                              const Text('Hue'),
-                              8.width,
-                              Slider(
-                                min: 0.0,
-                                max: 1.0,
-                                onChanged: (d) {
-                                  hue = d;
-                                  setState(() {});
-                                },
-                                value: hue,
-                                onChangeEnd: (d) {
-                                  // appStore.addUndoList(
-                                  //     undoModel:
-                                  //         UndoModel(type: 'hue', number: d));
-                                  // setState(() {});
-                                },
-                              ).expand(),
-                            ],
-                          ),
-                        ),
-                      ),
-                    if (mIsFilterViewVisible)
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        height: mIsFilterViewVisible ? 120 : 0,
-                        width: context.width(),
-                        child: FilterSelectionWidget(
-                            isFreePhoto: widget.isFreePhoto,
-                            image: croppedFile,
-                            freeImage: croppedFileFree,
-                            onSelect: (v) {
-                              filter = v;
-                              // appStore.addUndoList(
-                              //     undoModel:
-                              //         UndoModel(type: 'filter', filter: v));
-                              setState(() {});
-                            }),
-                      ),
-                    if (mIsFrameVisible)
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        height: mIsFrameVisible ? 120 : 0,
-                        width: context.width(),
-                        child: FrameSelectionWidget(onSelect: (v) {
-                          frame = v;
-                          if (v.isEmpty) frame = null;
-                          // appStore.addUndoList(
-                          //     undoModel: UndoModel(type: 'frame', data: v));
-                          setState(() {});
-                        }),
-                      ),
-                    if (mIsBlurVisible)
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        height: mIsBlurVisible ? 120 : 0,
-                        color: Colors.white38,
-                        width: context.width(),
-                        child: BlurSelectorBottomSheet(
-                          sliderValue: blur,
-                          onColorSelected: (v) {
-                            blur = v;
-                            setState(() {});
-                          },
-                          onColorSelectedEnd: (p0) {
-                            // appStore.addUndoList(
-                            //     undoModel: UndoModel(type: 'blur', number: p0));
-                            // setState(() {});
-                          },
-                        ),
-                      ),
-                    Container(
-                      height: bottomWidgetHeight,
-                      color: Colors.white12,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          ListView(
-                            controller: scrollController,
-                            scrollDirection: Axis.horizontal,
-                            children: [
-                              BottomBarItemWidget(
-                                  title: 'Eraser',
-                                  icons:
-                                      const Icon(FontAwesomeIcons.eraser).icon,
-                                  onTap: () => onEraserClick()),
-                              BottomBarItemWidget(
-                                  title: 'Text',
-                                  icons: const Icon(Icons.text_fields_rounded)
-                                      .icon,
-                                  onTap: () => onTextClick()),
-                              BottomBarItemWidget(
-                                  title: 'Neon',
-                                  icons: const Icon(Icons.text_fields_rounded)
-                                      .icon,
-                                  onTap: () => onNeonLightClick()),
-                              BottomBarItemWidget(
-                                  title: 'Emoji',
-                                  icons: const Icon(FontAwesomeIcons.faceSmile)
-                                      .icon,
-                                  onTap: () => onEmojiClick()),
-                              BottomBarItemWidget(
-                                  title: 'Stickers',
-                                  icons:
-                                      const Icon(FontAwesomeIcons.faceSmileWink)
-                                          .icon,
-                                  onTap: () {
-                                    setState(() {
-                                      onStickerClick();
-                                    });
-                                  }),
-                              BottomBarItemWidget(
-                                  title: 'Add Image',
-                                  icons: const Icon(Icons.image_outlined).icon,
-                                  onTap: () {
-                                    setState(() {
-                                      onImageClick();
-                                    });
-                                  }),
-
-                              /// Will be added in next update due to multiple finger bug
-                              BottomBarItemWidget(
-                                  title: 'Pen',
-                                  icons: const Icon(FontAwesomeIcons.penFancy)
-                                      .icon,
-                                  onTap: () => onPenClick()),
-                              BottomBarItemWidget(
-                                  title: 'Brightness',
-                                  icons: const Icon(Icons.brightness_2_outlined)
-                                      .icon,
-                                  onTap: () => onBrightnessSliderClick()),
-                              BottomBarItemWidget(
-                                  title: 'Contrast',
-                                  icons: const Icon(Icons.brightness_4_outlined)
-                                      .icon,
-                                  onTap: () => onContrastSliderClick()),
-                              BottomBarItemWidget(
-                                  title: 'Saturation',
-                                  icons:
-                                      const Icon(Icons.brightness_4_sharp).icon,
-                                  onTap: () => onSaturationSliderClick()),
-                              BottomBarItemWidget(
-                                  title: 'Hue',
-                                  icons:
-                                      const Icon(Icons.brightness_medium_sharp)
-                                          .icon,
-                                  onTap: () => onHueSliderClick()),
-                              BottomBarItemWidget(
-                                  title: 'Blur',
-                                  icons: const Icon(MaterialCommunityIcons.blur)
-                                      .icon,
-                                  onTap: () => onBlurClick()),
-                              BottomBarItemWidget(
-                                  title: 'Filter',
-                                  icons: const Icon(Icons.photo).icon,
-                                  onTap: () => onFilterClick()),
-                              // BottomBarItemWidget(title: 'Shape', icons: Icon(Icons.format_shapes_sharp).icon, onTap: () => onShapeClick()),
-                              BottomBarItemWidget(
-                                  title: 'Add Text Templet',
-                                  icons: const Icon(Icons.format_shapes_sharp)
-                                      .icon,
-                                  onTap: () => onTextTemplet()),
-                              BottomBarItemWidget(
-                                  title: 'Border',
-                                  icons: const Icon(Icons.format_shapes_sharp)
-                                      .icon,
-                                  onTap: () => onBorderSliderClick()),
-                              BottomBarItemWidget(
-                                  title: 'Frame',
-                                  icons: !getBoolAsync(IS_FRAME_REWARDED)
-                                      ? const Icon(Icons.filter_frames).icon
-                                      : const Icon(Icons.lock_outline_rounded)
-                                          .icon,
-                                  onTap: () => onFrameClick()),
-                            ],
-                          ).visible(mIsText == false
-                              //  && appStore.isText == false
-                              ),
-                          ListView(
-                            controller: scrollController,
-                            scrollDirection: Axis.horizontal,
-                            children: [
-                              BottomBarItemWidget(
-                                title: 'Edit',
-                                icons: const Icon(Icons.edit).icon,
-                                onTap: () => (setState(() async {
-                                  String? text = await showInDialog(context,
-                                      builder: (_) => TextEditorDialog(
-                                            text: mStackedWidgetList.last.value,
-                                          ));
-                                  mStackedWidgetList.last.value = text;
-                                })),
-                              ),
-                              BottomBarItemWidget(
-                                  title: 'Font Family',
-                                  icons: const Icon(Icons.text_fields_rounded)
-                                      .icon,
-                                  onTap: () => onTextStyle()),
-                              BottomBarItemWidget(
-                                title: 'Font Size',
-                                icons: const Icon(Icons.font_download_outlined)
-                                    .icon,
-                                onTap: () => (setState(() {
-                                  mIsTextSize = !mIsTextSize;
-                                  mIsTextColor = false;
-                                  mIsTextstyle = false;
-                                  mIsTextBgColor = false;
-                                })),
-                              ),
-                              BottomBarItemWidget(
-                                title: 'Bg Color',
-                                icons:
-                                    const Icon(Icons.color_lens_outlined).icon,
-                                onTap: () => (setState(() {
-                                  mIsTextBgColor = !mIsTextBgColor;
-                                  mIsTextColor = false;
-                                  mIsTextstyle = false;
-                                  mIsTextSize = false;
-                                })),
-                              ),
-                              BottomBarItemWidget(
-                                title: 'Text Color',
-                                icons: const Icon(Icons.format_color_fill).icon,
-                                onTap: () => (setState(() {
-                                  mIsTextColor = !mIsTextColor;
-                                  mIsTextstyle = false;
-                                  mIsTextBgColor = false;
-                                  mIsTextSize = false;
-                                })),
-                              ),
-                              BottomBarItemWidget(
-                                title: 'Remove',
-                                icons: const Icon(Icons.delete_outline_outlined)
-                                    .icon,
-                                onTap: () => (setState(
-                                  () {
-                                    mIsTextColor = false;
-                                    mIsTextstyle = false;
-                                    mIsTextBgColor = false;
-                                    mIsTextSize = false;
-                                    mStackedWidgetList.removeLast();
-                                    // appStore.removeUndoList();
-                                    // appStore.mStackedWidgetListundo1
-                                    //     .removeLast();
-                                    // mIsText = false;
-                                    // appStore.isText = false;
+                                    icon: const Icon(Icons.redo))
+                                // .visible(
+                                //     appStore.mStackedWidgetListundo.length != 0)
+                                ,
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                if (!widget.isFreePhoto)
+                                  IconButton(
+                                    padding: EdgeInsets.zero,
+                                    icon: const Icon(Icons.crop),
+                                    onPressed: () async {
+                                      if (widget.isFreePhoto) {
+                                        cropImage(
+                                            isFreePhoto: widget.isFreePhoto,
+                                            networkImage:
+                                                imageState.originalFileFree!,
+                                            onDone: (file) {
+                                              imageState.croppedFile = file;
+                                              getImageSize();
+                                              setState(() {});
+                                            }).catchError(log);
+                                      } else {
+                                        cropImage(
+                                            imageFile: imageState.originalFile!,
+                                            onDone: (file) {
+                                              imageState.croppedFile = file;
+                                              getImageSize();
+                                              setState(() {});
+                                            }).catchError(log);
+                                      }
+                                    },
+                                  ).withTooltip(msg: 'Crop'),
+                                0.width,
+                                GestureDetector(
+                                  onTap: () => log('tap'),
+                                  onTapDown: (v) {
+                                    mShowBeforeImage = true;
                                     setState(() {});
                                   },
-                                )),
-                              ),
-                            ],
-                          ).visible(mIsText
-                              // || appStore.isText
-                              ),
-                          // Positioned(
-                          //   child: AnimatedCrossFade(
-                          //       firstChild: Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey),
-                          //       secondChild: Offstage(),
-                          //       crossFadeState: mIsMoreConfigWidgetVisible ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-                          //       duration: 700.milliseconds),
-                          //   right: 8,
-                          // ),
-                        ],
+                                  onTapUp: (v) {
+                                    mShowBeforeImage = false;
+                                    setState(() {});
+                                  },
+                                  onTapCancel: () {
+                                    mShowBeforeImage = false;
+                                    setState(() {});
+                                  },
+                                  child: const Icon(Icons.compare_rounded)
+                                      .paddingAll(0),
+                                ),
+                                // 16.width,
+                                Text(mIsText ? 'Done' : 'Save',
+                                        style:
+                                            boldTextStyle(color: colorPrimary))
+                                    .paddingSymmetric(
+                                        horizontal: 16, vertical: 8)
+                                    .withShaderMaskGradient(
+                                        const LinearGradient(colors: [
+                                      itemGradient1,
+                                      itemGradient2
+                                    ]))
+                                    .onTap(() async {
+                                  mIsText
+                                      ? setState(() {
+                                          mIsText = false;
+                                          // appStore.isText = false;
+                                          // appStore.isText = false;
+                                          mIsTextstyle = false;
+                                          mIsTextColor = false;
+                                          mIsTextBgColor = false;
+                                          mIsTextSize = false;
+                                        })
+                                      : checkPermissionAndCaptureImage();
+                                }, borderRadius: radius())
+                              ],
+                            ),
+                          ],
+                        ).paddingTop(0),
                       ),
-                    ),
-                  ],
-                ),
-              ],
-            ).paddingTop(context.statusBarHeight),
-            // Observer(builder: (_) => Loader().visible(appStore.isLoading)),
-          ],
-        ),
+                      Stack(
+                        alignment: AlignmentDirectional.center,
+                        children: [
+                          // This widget will be saved as edited Image
+                          Screenshot(
+                              controller: screenshotController,
+                              key: screenshotKey,
+                              child: PhotoPreview(
+                                mIsPenEnabled: mIsPenEnabled,
+                              )),
+
+                          /// Show preview of edited image before save
+                          if (!widget.isFreePhoto)
+                            Image.file(imageState.croppedFile!,
+                                    fit: BoxFit.cover)
+                                .visible(!widget.isFreePhoto)
+                                .visible(mShowBeforeImage),
+                        ],
+                      ).expand(),
+                      _editorBottomBar()
+                    ],
+                  ).paddingTop(context.statusBarHeight),
+                  // Observer(builder: (_) => Loader().visible(appStore.isLoading)),
+                ],
+              );
+            }),
       ),
     );
   }
+
+  Widget _editorBottomBar() => StreamBuilder<ImageState>(
+      stream: _bloC.imageStateStream,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox();
+        }
+        final imageState = snapshot.data!;
+        return Column(
+          children: [
+            if (mIsBrightnessSliderVisible)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: mIsBrightnessSliderVisible ? 60 : 0,
+                width: context.width(),
+                color: Colors.grey.shade100,
+                child: Container(
+                  color: Colors.white38,
+                  height: 60,
+                  child: Row(
+                    children: [
+                      8.width,
+                      const Text('Brightness'),
+                      8.width,
+                      Slider(
+                        min: 0.0,
+                        max: 1.0,
+                        onChanged: _bloC.updateBrightness,
+                        value: imageState.brightness,
+                        onChangeEnd: (d) {
+                          // appStore.addUndoList(
+                          //     undoModel: UndoModel(
+                          //         type: 'brightness', number: d));
+                          setState(() {});
+                        },
+                      ).expand(),
+                    ],
+                  ),
+                ),
+              ),
+            if (mIsPenColorVisible)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: mIsPenColorVisible ? 60 : 0,
+                color: Colors.grey.shade100,
+                width: context.width(),
+                child: Row(
+                  children: [
+                    Switch(
+                      value: mIsPenEnabled,
+                      onChanged: (b) {
+                        mIsPenEnabled = b;
+                        mIsPenColorVisible = false;
+                        setState(() {});
+                      },
+                    ),
+                    ColorSelectorBottomSheet(
+                      list: penColors,
+                      onColorSelected: (Color color) {
+                        List<Point> tempPoints =
+                            imageState.signatureController.points;
+                        final signatureController = SignatureController(
+                            penStrokeWidth: 4, penColor: color);
+
+                        for (var element in tempPoints) {
+                          signatureController.addPoint(element);
+                        }
+                        _bloC.changeSignatureController(signatureController);
+
+                        mIsPenColorVisible = false;
+                        mIsPenEnabled = true;
+
+                        setState(() {});
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            if (mIsTextColor)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: 40,
+                color: Colors.grey.shade100,
+                width: context.width(),
+                child: Row(
+                  children: [
+                    ColorSelectorBottomSheet(
+                      list: textColors,
+                      selectedColor:
+                          imageState.mStackedWidgetList.last.textColor,
+                      onColorSelected: _bloC.changeLastTextColor,
+                    ),
+                  ],
+                ),
+              ),
+            if (mIsTextBgColor)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: 40,
+                color: Colors.grey.shade100,
+                alignment: Alignment.center,
+                width: context.width(),
+                child: Row(
+                  children: [
+                    ColorSelectorBottomSheet(
+                      list: textColors,
+                      selectedColor:
+                          imageState.mStackedWidgetList.last.backgroundColor,
+                      onColorSelected: _bloC.changeLastTextBackgroundColor,
+                    ),
+                  ],
+                ),
+              ),
+            if (mIsTextSize)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.only(left: 16, bottom: 8),
+                height: 30,
+                color: Colors.grey.shade100,
+                width: context.width(),
+                child: Stack(
+                  alignment: Alignment.centerLeft,
+                  children: [
+                    Slider(
+                      value: imageState.mStackedWidgetList.last.size
+                          .validate(value: 16),
+                      min: 10.0,
+                      max: 100.0,
+                      onChangeEnd: _bloC.changeLastTextSize,
+                      onChanged: _bloC.changeLastTextSize,
+                    ).paddingLeft(16),
+                    Text('${imageState.mStackedWidgetList.last.size!.toInt()}' +
+                        '%'),
+                  ],
+                ),
+              ),
+            if (mIsTextstyle)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: 40,
+                alignment: Alignment.centerLeft,
+                margin: const EdgeInsets.only(left: 16),
+                width: context.width(),
+                color: Colors.white,
+                child: Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration:
+                          imageState.mStackedWidgetList.last.fontStyle ==
+                                  FontStyle.normal
+                              ? BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.black))
+                              : null,
+                      child: Text('Normal', style: boldTextStyle()).onTap(() {
+                        _bloC.changeLastTextFontStyle(FontStyle.normal);
+                        mIsTextstyle = false;
+                        setState(() {});
+                      }),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration:
+                          imageState.mStackedWidgetList.last.fontStyle ==
+                                  FontStyle.italic
+                              ? BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.black))
+                              : null,
+                      child: Text('Italic',
+                              style: boldTextStyle(fontStyle: FontStyle.italic))
+                          .onTap(() {
+                        _bloC.changeLastTextFontStyle(FontStyle.italic);
+                        mIsTextstyle = false;
+                        setState(() {});
+                      }),
+                    ),
+                  ],
+                ),
+              ),
+            if (mIsBorderSliderVisible)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: (imageState.outerBorderwidth != 0 ||
+                        imageState.innerBorderwidth != 0)
+                    ? 130
+                    : 84,
+                width: context.width(),
+                color: Colors.grey.shade100,
+                child: Container(
+                  color: Colors.white38,
+                  child: Column(
+                    children: [
+                      6.height.visible(imageState.outerBorderwidth != 0.0),
+                      ColorSelectorBottomSheet(
+                        list: textColors,
+                        selectedColor: imageState.isOuterBorder
+                            ? imageState.outerBorderColor
+                            : imageState.innerBorderColor,
+                        onColorSelected: (c) {
+                          imageState.isOuterBorder
+                              ? imageState.outerBorderColor = c
+                              : imageState.innerBorderColor = c;
+                          setState(() {});
+                          // appStore.addUndoList(
+                          //     undoModel: UndoModel(
+                          //         type: 'border',
+                          //         border: BorderModel(
+                          //             type: isOuterBorder
+                          //                 ? 'outer'
+                          //                 : 'inner',
+                          //             width: isOuterBorder
+                          //                 ? outerBorderwidth
+                          //                 : innerBorderwidth,
+                          //             borderColor: c)));
+                        },
+                      ).visible(imageState.outerBorderwidth != 0 ||
+                          imageState.innerBorderwidth != 0),
+                      (imageState.outerBorderwidth != 0 ||
+                              imageState.innerBorderwidth != 0)
+                          ? 16.height
+                          : 6.height,
+                      Row(children: [
+                        8.width,
+                        InkWell(
+                            onTap: () => _bloC.changeOuterBorder(true),
+                            child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(6),
+                                    color: imageState.isOuterBorder
+                                        ? Colors.lightBlueAccent
+                                            .withOpacity(0.5)
+                                        : null),
+                                child:
+                                    Text("Outer", style: primaryTextStyle()))),
+                        16.width,
+                        InkWell(
+                            onTap: () => _bloC.changeOuterBorder(false),
+                            child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(6),
+                                    color: imageState.isOuterBorder == false
+                                        ? Colors.lightBlueAccent
+                                            .withOpacity(0.5)
+                                        : null),
+                                child:
+                                    Text("Inner", style: primaryTextStyle())))
+                      ]),
+                      Row(
+                        children: [
+                          8.width,
+                          const Text('Border'),
+                          8.width,
+                          Slider(
+                            min: 0.0,
+                            max: 50,
+                            onChanged: _bloC.changeBorder,
+                            value: imageState.isOuterBorder
+                                ? imageState.outerBorderwidth
+                                : imageState.innerBorderwidth,
+                            onChangeEnd: (d) {
+                              // appStore.addUndoList(
+                              //     undoModel: UndoModel(
+                              //         type: 'border',
+                              //         border: BorderModel(
+                              //             type: isOuterBorder
+                              //                 ? 'outer'
+                              //                 : 'inner',
+                              //             width: d,
+                              //             borderColor: isOuterBorder
+                              //                 ? outerBorderColor
+                              //                 : innerBorderColor)));
+                              // setState(() {});
+                              // appStore.mStackedWidgetListundo1
+                              //     .forEach((element) {});
+                            },
+                          ).expand(),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            if (mIsContrastSliderVisible)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: mIsContrastSliderVisible ? 60 : 0,
+                width: context.width(),
+                color: Colors.grey.shade100,
+                child: Container(
+                  color: Colors.white38,
+                  height: 60,
+                  child: Row(
+                    children: [
+                      8.width,
+                      const Text('Contrast'),
+                      8.width,
+                      Slider(
+                        min: 0.0,
+                        max: 1.0,
+                        onChanged: _bloC.updateContrast,
+                        value: imageState.contrast,
+                        onChangeEnd: (d) {
+                          // appStore.addUndoList(
+                          //     undoModel: UndoModel(
+                          //         type: 'contrast', number: d));
+                          setState(() {});
+                        },
+                      ).expand(),
+                    ],
+                  ),
+                ),
+              ),
+            if (mIsSaturationSliderVisible)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: mIsSaturationSliderVisible ? 60 : 0,
+                width: context.width(),
+                color: Colors.grey.shade100,
+                child: Container(
+                  color: Colors.white38,
+                  height: 60,
+                  child: Row(
+                    children: [
+                      8.width,
+                      const Text('Saturation'),
+                      8.width,
+                      Slider(
+                        min: 0.0,
+                        max: 1.0,
+                        onChanged: _bloC.updateSaturation,
+                        value: imageState.saturation,
+                        onChangeEnd: (d) {
+                          // appStore.addUndoList(
+                          //     undoModel: UndoModel(
+                          //         type: 'saturation', number: d));
+                          setState(() {});
+                        },
+                      ).expand(),
+                    ],
+                  ),
+                ),
+              ),
+            if (mIsHueSliderVisible)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: mIsHueSliderVisible ? 60 : 0,
+                width: context.width(),
+                color: Colors.grey.shade100,
+                child: Container(
+                  color: Colors.white38,
+                  height: 60,
+                  child: Row(
+                    children: [
+                      8.width,
+                      const Text('Hue'),
+                      8.width,
+                      Slider(
+                        min: 0.0,
+                        max: 1.0,
+                        onChanged: _bloC.updateHue,
+                        value: imageState.hue,
+                        onChangeEnd: (d) {
+                          // appStore.addUndoList(
+                          //     undoModel:
+                          //         UndoModel(type: 'hue', number: d));
+                          // setState(() {});
+                        },
+                      ).expand(),
+                    ],
+                  ),
+                ),
+              ),
+            if (mIsFilterViewVisible)
+              AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  height: mIsFilterViewVisible ? 120 : 0,
+                  width: context.width(),
+                  child: FilterSelectionWidget(
+                    isFreePhoto: widget.isFreePhoto,
+                    image: imageState.croppedFile,
+                    freeImage: imageState.croppedFileFree,
+                    onSelect: _bloC.updateFilter,
+                  )),
+            if (mIsFrameVisible)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: mIsFrameVisible ? 120 : 0,
+                width: context.width(),
+                child: FrameSelectionWidget(onSelect: (v) {
+                  _bloC.changeFrame(v);
+                  // appStore.addUndoList(
+                  //     undoModel: UndoModel(type: 'frame', data: v));
+                }),
+              ),
+            if (mIsBlurVisible)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: mIsBlurVisible ? 120 : 0,
+                color: Colors.white38,
+                width: context.width(),
+                child: BlurSelectorBottomSheet(
+                  sliderValue: imageState.blur,
+                  onColorSelected: _bloC.updateBlur,
+                  onColorSelectedEnd: (p0) {
+                    // appStore.addUndoList(
+                    //     undoModel: UndoModel(type: 'blur', number: p0));
+                    // setState(() {});
+                  },
+                ),
+              ),
+            Container(
+              height: imageState.bottomWidgetHeight,
+              color: Colors.white12,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  ListView(
+                    controller: scrollController,
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      BottomBarItemWidget(
+                          title: 'Eraser',
+                          icons: const Icon(FontAwesomeIcons.eraser).icon,
+                          onTap: () => onEraserClick()),
+                      BottomBarItemWidget(
+                          title: 'Text',
+                          icons: const Icon(Icons.text_fields_rounded).icon,
+                          onTap: () => onTextClick()),
+                      BottomBarItemWidget(
+                          title: 'Neon',
+                          icons: const Icon(Icons.text_fields_rounded).icon,
+                          onTap: () => onNeonLightClick()),
+                      BottomBarItemWidget(
+                          title: 'Emoji',
+                          icons: const Icon(FontAwesomeIcons.faceSmile).icon,
+                          onTap: () => onEmojiClick()),
+                      BottomBarItemWidget(
+                          title: 'Stickers',
+                          icons:
+                              const Icon(FontAwesomeIcons.faceSmileWink).icon,
+                          onTap: () {
+                            setState(() {
+                              onStickerClick();
+                            });
+                          }),
+                      BottomBarItemWidget(
+                          title: 'Add Image',
+                          icons: const Icon(Icons.image_outlined).icon,
+                          onTap: () {
+                            setState(() {
+                              onImageClick();
+                            });
+                          }),
+
+                      /// Will be added in next update due to multiple finger bug
+                      BottomBarItemWidget(
+                          title: 'Pen',
+                          icons: const Icon(FontAwesomeIcons.penFancy).icon,
+                          onTap: () => onPenClick()),
+                      BottomBarItemWidget(
+                          title: 'Brightness',
+                          icons: const Icon(Icons.brightness_2_outlined).icon,
+                          onTap: () => onBrightnessSliderClick()),
+                      BottomBarItemWidget(
+                          title: 'Contrast',
+                          icons: const Icon(Icons.brightness_4_outlined).icon,
+                          onTap: () => onContrastSliderClick()),
+                      BottomBarItemWidget(
+                          title: 'Saturation',
+                          icons: const Icon(Icons.brightness_4_sharp).icon,
+                          onTap: () => onSaturationSliderClick()),
+                      BottomBarItemWidget(
+                          title: 'Hue',
+                          icons: const Icon(Icons.brightness_medium_sharp).icon,
+                          onTap: () => onHueSliderClick()),
+                      BottomBarItemWidget(
+                          title: 'Blur',
+                          icons: const Icon(MaterialCommunityIcons.blur).icon,
+                          onTap: () => onBlurClick()),
+                      BottomBarItemWidget(
+                          title: 'Filter',
+                          icons: const Icon(Icons.photo).icon,
+                          onTap: () => onFilterClick()),
+                      // BottomBarItemWidget(title: 'Shape', icons: Icon(Icons.format_shapes_sharp).icon, onTap: () => onShapeClick()),
+                      BottomBarItemWidget(
+                          title: 'Add Text Templet',
+                          icons: const Icon(Icons.format_shapes_sharp).icon,
+                          onTap: () => onTextTemplet()),
+                      BottomBarItemWidget(
+                          title: 'Border',
+                          icons: const Icon(Icons.format_shapes_sharp).icon,
+                          onTap: () => onBorderSliderClick()),
+                      BottomBarItemWidget(
+                          title: 'Frame',
+                          icons: !getBoolAsync(IS_FRAME_REWARDED)
+                              ? const Icon(Icons.filter_frames).icon
+                              : const Icon(Icons.lock_outline_rounded).icon,
+                          onTap: () => onFrameClick()),
+                    ],
+                  ).visible(mIsText == false
+                      //  && appStore.isText == false
+                      ),
+                  ListView(
+                    controller: scrollController,
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      BottomBarItemWidget(
+                        title: 'Edit',
+                        icons: const Icon(Icons.edit).icon,
+                        onTap: () => (setState(() async {
+                          String? text = await showInDialog(context,
+                              builder: (_) => TextEditorDialog(
+                                    text: imageState
+                                        .mStackedWidgetList.last.value,
+                                  ));
+                          _bloC.changeLastTextValue(text);
+                        })),
+                      ),
+                      BottomBarItemWidget(
+                          title: 'Font Family',
+                          icons: const Icon(Icons.text_fields_rounded).icon,
+                          onTap: () => onTextStyle()),
+                      BottomBarItemWidget(
+                        title: 'Font Size',
+                        icons: const Icon(Icons.font_download_outlined).icon,
+                        onTap: () => (setState(() {
+                          mIsTextSize = !mIsTextSize;
+                          mIsTextColor = false;
+                          mIsTextstyle = false;
+                          mIsTextBgColor = false;
+                        })),
+                      ),
+                      BottomBarItemWidget(
+                        title: 'Bg Color',
+                        icons: const Icon(Icons.color_lens_outlined).icon,
+                        onTap: () => (setState(() {
+                          mIsTextBgColor = !mIsTextBgColor;
+                          mIsTextColor = false;
+                          mIsTextstyle = false;
+                          mIsTextSize = false;
+                        })),
+                      ),
+                      BottomBarItemWidget(
+                        title: 'Text Color',
+                        icons: const Icon(Icons.format_color_fill).icon,
+                        onTap: () => (setState(() {
+                          mIsTextColor = !mIsTextColor;
+                          mIsTextstyle = false;
+                          mIsTextBgColor = false;
+                          mIsTextSize = false;
+                        })),
+                      ),
+                      BottomBarItemWidget(
+                        title: 'Remove',
+                        icons: const Icon(Icons.delete_outline_outlined).icon,
+                        onTap: () => (setState(
+                          () {
+                            mIsTextColor = false;
+                            mIsTextstyle = false;
+                            mIsTextBgColor = false;
+                            mIsTextSize = false;
+                            _bloC.removeLastText();
+                            // appStore.removeUndoList();
+                            // appStore.mStackedWidgetListundo1
+                            //     .removeLast();
+                            // mIsText = false;
+                            // appStore.isText = false;
+                          },
+                        )),
+                      ),
+                    ],
+                  ).visible(mIsText
+                      // || appStore.isText
+                      ),
+                  // Positioned(
+                  //   child: AnimatedCrossFade(
+                  //       firstChild: Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey),
+                  //       secondChild: Offstage(),
+                  //       crossFadeState: mIsMoreConfigWidgetVisible ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+                  //       duration: 700.milliseconds),
+                  //   right: 8,
+                  // ),
+                ],
+              ),
+            ),
+          ],
+        );
+      });
 }

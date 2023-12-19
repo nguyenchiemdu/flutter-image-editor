@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:image_editor/blocs/photo_edit_blocs.dart';
 import 'package:image_editor/screens/PhotoEditScreen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nb_utils/nb_utils.dart';
+import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,22 +38,24 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
   void _incrementCounter() async {
     final File image = await pickImage();
     if (!mounted) return;
     Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (_) => PhotoEditScreen(
-                  file: image,
-                )));
+            builder: (_) => Provider<PhotoEditBloC>(
+                create: (_) => PhotoEditBloC(),
+                builder: (context, _) {
+                  return PhotoEditScreen(
+                    file: image,
+                  );
+                })));
   }
 
   Future<File> pickImage() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
     return File(image!.path);
   }
 
@@ -61,20 +65,7 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
+      body: const Center(),
       floatingActionButton: FloatingActionButton(
         onPressed: _incrementCounter,
         tooltip: 'Increment',
