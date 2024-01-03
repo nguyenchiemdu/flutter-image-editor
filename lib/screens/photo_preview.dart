@@ -8,20 +8,46 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:provider/provider.dart';
 import 'dart:ui' as ui;
 
-class PhotoPreview extends StatelessWidget {
+class PhotoPreview extends StatefulWidget {
   final bool mIsPenEnabled;
+  final int index;
+  final VoidCallback? getImageSize;
+  const PhotoPreview(
+      {Key? key,
+      this.mIsPenEnabled = false,
+      required this.index,
+      this.getImageSize})
+      : super(key: key);
 
-  const PhotoPreview({Key? key, this.mIsPenEnabled = false}) : super(key: key);
+  @override
+  State<PhotoPreview> createState() => _PhotoPreviewState();
+}
+
+class _PhotoPreviewState extends State<PhotoPreview>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  void initState() {
+    context.read<PhotoEditBloC>().changeCurrentImageIndex(widget.index);
+    widget.getImageSize?.call();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final bloC = context.read<PhotoEditBloC>();
 
-    return StreamBuilder<ImageState>(
-        stream: bloC.imageStateStream,
+    return StreamBuilder<List<ImageState>>(
+        stream: bloC.imageStatesStream,
         builder: (context, snap) {
           if (!snap.hasData) return const SizedBox();
-          final imageState = snap.data!;
-          return SizedBox(
+          final imageStates = snap.data!;
+          final imageState = imageStates[widget.index];
+          log(widget.index);
+          log(imageState.imageHeight);
+          log(imageState.imageWidth);
+          return Container(
+            color: Colors.red,
             height: imageState.imageHeight,
             width: imageState.imageWidth,
             child: Stack(
@@ -117,7 +143,7 @@ class PhotoPreview extends StatelessWidget {
                       )
                     : const SizedBox(),
                 IgnorePointer(
-                  ignoring: !mIsPenEnabled,
+                  ignoring: !widget.mIsPenEnabled,
                   child: SignatureWidget(
                     signatureController: imageState.signatureController,
                     points: imageState.points,
@@ -131,4 +157,7 @@ class PhotoPreview extends StatelessWidget {
           );
         });
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }

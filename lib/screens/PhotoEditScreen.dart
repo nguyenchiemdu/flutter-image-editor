@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
@@ -31,12 +32,9 @@ import '../utils/Common.dart';
 
 class PhotoEditScreen extends StatefulWidget {
   static String tag = '/PhotoEditScreen';
-  final File? file;
-  final bool isFreePhoto;
-  final String? freeImage;
+  final List<File> files;
 
-  const PhotoEditScreen(
-      {super.key, this.file, this.isFreePhoto = false, this.freeImage});
+  const PhotoEditScreen({super.key, required this.files});
 
   @override
   PhotoEditScreenState createState() => PhotoEditScreenState();
@@ -120,10 +118,11 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
   }
 
   Future<void> getImageSize() async {
-    final imageState = _bloC.imageStateCtrl.value;
     await Future.delayed(const Duration(seconds: 2));
+    final imageState = _bloC.currentImageState();
     imageState.imageHeight = imageState.imageKey.currentContext!.size!.height;
     imageState.imageWidth = imageState.imageKey.currentContext!.size!.width;
+
     if (!mounted) return;
     if ((imageState.imageHeight ?? 0).toInt() == 0) {
       imageState.imageHeight = context.height();
@@ -132,37 +131,31 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
       imageState.imageWidth = context.width();
     }
     setState(() {});
-    imageState.imageHeight = imageState.imageHeight;
-    imageState.imageWidth = imageState.imageWidth;
-    _bloC.imageStateCtrl.add(imageState);
+    // log(imageState.imageHeight);
+    // log(imageState.imageWidth);
+    _bloC.updateImageState(imageState);
   }
 
   Future<void> init() async {
-    final ImageState imageState = ImageState()
-      ..imageKey = GlobalKey()
-      ..points = []
-      ..mStackedWidgetList = [];
-    if (widget.isFreePhoto) {
-      imageState
-        ..originalFileFree = widget.freeImage
-        ..croppedFileFree = widget.freeImage;
-    } else {
-      imageState
-        ..originalFile = widget.file
-        ..croppedFile = widget.file;
+    final List<ImageState> imageStateList = [];
+
+    for (var file in widget.files) {
+      final ImageState imageState =
+          ImageState(imageKey: GlobalKey(), file: file);
+
+      scrollController.addListener(() {
+        if (scrollController.position.pixels ==
+            scrollController.position.maxScrollExtent) {
+          mIsMoreConfigWidgetVisible = false;
+        } else {
+          mIsMoreConfigWidgetVisible = true;
+        }
+
+        setState(() {});
+      });
+      imageStateList.add(imageState);
     }
-
-    scrollController.addListener(() {
-      if (scrollController.position.pixels ==
-          scrollController.position.maxScrollExtent) {
-        mIsMoreConfigWidgetVisible = false;
-      } else {
-        mIsMoreConfigWidgetVisible = true;
-      }
-
-      setState(() {});
-    });
-    _bloC.imageStateCtrl.add(imageState);
+    _bloC.listimageStatesCtrl.add(imageStateList);
   }
 
   Future<void> checkPermissionAndCaptureImage() async {
@@ -220,26 +213,7 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
       mIsContrastSliderVisible = false;
       mIsBorderSliderVisible = false;
 
-      /// Clear signature
-      _bloC.clearSignature();
-
-      /// Clear stacked widgets
-      _bloC.clearStackedWidgets();
-
-      /// Clear filter
-      _bloC.clearFilter();
-
-      /// Clear blur effect
-      _bloC.clearBlur();
-
-      /// Clear frame
-      _bloC.clearFrame();
-
-      /// Clear brightness, contrast, saturation, hue
-      _bloC.clearBrightnessContrastSaturationHue();
-
-      ///Border
-      _bloC.clearBorder();
+      _bloC.clearAllChanges();
 
       // appStore.mStackedWidgetListundo = [];
       // appStore.mStackedWidgetListundo1 = [];
@@ -692,11 +666,13 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
       child: Scaffold(
         key: scaffoldKey,
         resizeToAvoidBottomInset: false,
-        body: StreamBuilder<ImageState>(
-            stream: _bloC.imageStateStream,
+        body: StreamBuilder<List<ImageState>>(
+            stream: _bloC.imageStatesStream,
             builder: (context, snapshot) {
               if (!snapshot.hasData) return const SizedBox();
-              final imageState = snapshot.data!;
+              final imageStates = snapshot.data!;
+              final currentIndex = _bloC.currentImageIndex.value;
+              final imageState = imageStates[currentIndex];
               return Stack(
                 children: [
                   Column(
@@ -709,226 +685,11 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: [
-                                IconButton(
-                                  onPressed: () {
-                                    showConfirmDialogCustom(context,
-                                        title: 'You edited image will be lost',
-                                        primaryColor: colorPrimary,
-                                        positiveText: 'Ok',
-                                        negativeText: 'Cancel',
-                                        onAccept: (BuildContext context) async {
-                                      mIsText = false;
-                                      // appStore.isText = false;
-                                      Navigator.pop(context);
-                                    });
-                                  },
-                                  icon: const Icon(Icons.close),
-                                ),
-                                IconButton(
-                                    onPressed: () {
-                                      // if (appStore.mStackedWidgetListundo1.last
-                                      //         .type ==
-                                      //     'mStackedWidgetList') {
-                                      //   mIsText = false;
-                                      //   appStore.isText = false;
-                                      //   mStackedWidgetList.removeLast();
-                                      // } else if (appStore.mStackedWidgetListundo1
-                                      //         .last.type ==
-                                      //     'filter') {
-                                      //   filter = null;
-                                      // } else if (appStore.mStackedWidgetListundo1
-                                      //         .last.type ==
-                                      //     'blur') {
-                                      //   blur = 0;
-                                      // } else if (appStore.mStackedWidgetListundo1
-                                      //         .last.type ==
-                                      //     'frame') {
-                                      //   frame = null;
-                                      // } else if (appStore.mStackedWidgetListundo1
-                                      //         .last.type ==
-                                      //     'brightness') {
-                                      //   brightness = 0;
-                                      // } else if (appStore.mStackedWidgetListundo1
-                                      //         .last.type ==
-                                      //     'saturation') {
-                                      //   saturation = 0;
-                                      // } else if (appStore.mStackedWidgetListundo1
-                                      //         .last.type ==
-                                      //     'hue') {
-                                      //   hue = 0;
-                                      // } else if (appStore.mStackedWidgetListundo1
-                                      //         .last.type ==
-                                      //     'contrast') {
-                                      //   contrast = 0;
-                                      // } else if (appStore.mStackedWidgetListundo1
-                                      //         .last.type ==
-                                      //     'border') {
-                                      //   // print("------------------------------------------_____________________________");
-                                      //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo1.last.border!.type!}");
-                                      //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo1.last.border!.width!}");
-                                      //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo1.last.border!.borderColor!}");
-                                      //   if (appStore.mStackedWidgetListundo1.last
-                                      //           .border!.type ==
-                                      //       'outer') {
-                                      //     outerBorderwidth = appStore
-                                      //         .mStackedWidgetListundo1
-                                      //         .last
-                                      //         .border!
-                                      //         .width!;
-                                      //     outerBorderColor = appStore
-                                      //         .mStackedWidgetListundo1
-                                      //         .last
-                                      //         .border!
-                                      //         .borderColor!;
-                                      //   } else {
-                                      //     innerBorderwidth = appStore
-                                      //         .mStackedWidgetListundo1
-                                      //         .last
-                                      //         .border!
-                                      //         .width!;
-                                      //     innerBorderColor = appStore
-                                      //         .mStackedWidgetListundo1
-                                      //         .last
-                                      //         .border!
-                                      //         .borderColor!;
-                                      //   }
-                                      // }
-                                      // appStore.addRedoList(
-                                      //     undoModel: appStore
-                                      //         .mStackedWidgetListundo1.last);
-                                      // appStore.removeUndoList();
-                                      setState(() {});
-                                    },
-                                    icon: const Icon(Icons.undo))
-                                // .visible(
-                                //     appStore.mStackedWidgetListundo1.length != 0),
-                                ,
-                                IconButton(
-                                    onPressed: () {
-                                      // mStackedWidgetList.add(mStackedWidgetListundo.last);
-                                      // mStackedWidgetListundo.removeLast();
-                                      // if (appStore
-                                      //         .mStackedWidgetListundo.last.type ==
-                                      //     'mStackedWidgetList') {
-                                      //   mStackedWidgetList.add(appStore
-                                      //       .mStackedWidgetListundo.last.widget!);
-                                      //   if (appStore.mStackedWidgetListundo.last
-                                      //           .type ==
-                                      //       'text') {
-                                      //     mIsText = true;
-                                      //     appStore.isText = true;
-                                      //   }
-                                      // } else if (appStore
-                                      //         .mStackedWidgetListundo.last.type ==
-                                      //     'filter') {
-                                      //   filter = appStore
-                                      //       .mStackedWidgetListundo.last.filter;
-                                      // } else if (appStore
-                                      //         .mStackedWidgetListundo.last.type ==
-                                      //     'blur') {
-                                      //   blur = appStore
-                                      //       .mStackedWidgetListundo.last.number!;
-                                      // } else if (appStore
-                                      //         .mStackedWidgetListundo.last.type ==
-                                      //     'frame') {
-                                      //   frame = appStore
-                                      //       .mStackedWidgetListundo.last.data;
-                                      // } else if (appStore
-                                      //         .mStackedWidgetListundo.last.type ==
-                                      //     'brightness') {
-                                      //   brightness = appStore
-                                      //       .mStackedWidgetListundo.last.number!;
-                                      // } else if (appStore
-                                      //         .mStackedWidgetListundo.last.type ==
-                                      //     'saturation') {
-                                      //   saturation = appStore
-                                      //       .mStackedWidgetListundo.last.number!;
-                                      // } else if (appStore
-                                      //         .mStackedWidgetListundo.last.type ==
-                                      //     'hue') {
-                                      //   hue = appStore
-                                      //       .mStackedWidgetListundo.last.number!;
-                                      // } else if (appStore
-                                      //         .mStackedWidgetListundo.last.type ==
-                                      //     'contrast') {
-                                      //   contrast = appStore
-                                      //       .mStackedWidgetListundo.last.number!;
-                                      // } else if (appStore
-                                      //         .mStackedWidgetListundo.last.type ==
-                                      //     'border') {
-                                      //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo.last.border!.type!}");
-                                      //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo.last.border!.width!}");
-                                      //   // print("++======++=+=+====+=+=+=+=+=+=+=+== ${appStore.mStackedWidgetListundo.last.border!.borderColor!}");
-                                      //   if (appStore.mStackedWidgetListundo.last
-                                      //           .border!.type ==
-                                      //       'outer') {
-                                      //     outerBorderwidth = appStore
-                                      //         .mStackedWidgetListundo
-                                      //         .last
-                                      //         .border!
-                                      //         .width!;
-                                      //     outerBorderColor = appStore
-                                      //         .mStackedWidgetListundo
-                                      //         .last
-                                      //         .border!
-                                      //         .borderColor!;
-                                      //   } else {
-                                      //     innerBorderwidth = appStore
-                                      //         .mStackedWidgetListundo
-                                      //         .last
-                                      //         .border!
-                                      //         .width!;
-                                      //     innerBorderColor = appStore
-                                      //         .mStackedWidgetListundo
-                                      //         .last
-                                      //         .border!
-                                      //         .borderColor!;
-                                      //   }
-                                      // }
-                                      // appStore.addUndoList(
-                                      //     undoModel: appStore
-                                      //         .mStackedWidgetListundo.last);
-                                      // appStore.removeRedoList();
-                                      setState(() {});
-                                    },
-                                    icon: const Icon(Icons.redo))
-                                // .visible(
-                                //     appStore.mStackedWidgetListundo.length != 0)
-                                ,
-                              ],
-                            ),
+                            _closeButton(),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                if (!widget.isFreePhoto)
-                                  IconButton(
-                                    padding: EdgeInsets.zero,
-                                    icon: const Icon(Icons.crop),
-                                    onPressed: () async {
-                                      if (widget.isFreePhoto) {
-                                        cropImage(
-                                            isFreePhoto: widget.isFreePhoto,
-                                            networkImage:
-                                                imageState.originalFileFree!,
-                                            onDone: (file) {
-                                              imageState.croppedFile = file;
-                                              getImageSize();
-                                              setState(() {});
-                                            }).catchError(log);
-                                      } else {
-                                        cropImage(
-                                            imageFile: imageState.originalFile!,
-                                            onDone: (file) {
-                                              imageState.croppedFile = file;
-                                              getImageSize();
-                                              setState(() {});
-                                            }).catchError(log);
-                                      }
-                                    },
-                                  ).withTooltip(msg: 'Crop'),
                                 0.width,
                                 GestureDetector(
                                   onTap: () => log('tap'),
@@ -983,16 +744,27 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
                           Screenshot(
                               controller: screenshotController,
                               key: screenshotKey,
-                              child: PhotoPreview(
-                                mIsPenEnabled: mIsPenEnabled,
+                              child: SizedBox(
+                                height: imageState.imageHeight,
+                                width: imageState.imageWidth,
+                                child: PageView.builder(
+                                    onPageChanged: (index) {
+                                      getImageSize();
+                                    },
+                                    itemCount: widget.files.length,
+                                    itemBuilder: (ctx, index) {
+                                      return PhotoPreview(
+                                        mIsPenEnabled: mIsPenEnabled,
+                                        index: index,
+                                        getImageSize: getImageSize,
+                                      );
+                                    }),
                               )),
 
                           /// Show preview of edited image before save
-                          if (!widget.isFreePhoto)
-                            Image.file(imageState.croppedFile!,
-                                    fit: BoxFit.cover)
-                                .visible(!widget.isFreePhoto)
-                                .visible(mShowBeforeImage),
+                          Image.file(imageState.croppedFile!, fit: BoxFit.cover)
+                              .visible(true)
+                              .visible(mShowBeforeImage),
                         ],
                       ).expand(),
                       _editorBottomBar()
@@ -1006,13 +778,15 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
     );
   }
 
-  Widget _editorBottomBar() => StreamBuilder<ImageState>(
-      stream: _bloC.imageStateStream,
+  Widget _editorBottomBar() => StreamBuilder<List<ImageState>>(
+      stream: _bloC.listimageStatesCtrl,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const SizedBox();
         }
-        final imageState = snapshot.data!;
+        final imageStates = snapshot.data!;
+        final currentIndex = _bloC.currentImageIndex.value;
+        final imageState = imageStates[currentIndex];
         return Column(
           children: [
             if (mIsBrightnessSliderVisible)
@@ -1136,7 +910,7 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
                       onChangeEnd: _bloC.changeLastTextSize,
                       onChanged: _bloC.changeLastTextSize,
                     ).paddingLeft(16),
-                    Text('${imageState.mStackedWidgetList.last.size!.toInt()}' +
+                    Text('${imageState.mStackedWidgetList.last.size!.toInt()}'
                         '%'),
                   ],
                 ),
@@ -1391,7 +1165,6 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
                   height: mIsFilterViewVisible ? 120 : 0,
                   width: context.width(),
                   child: FilterSelectionWidget(
-                    isFreePhoto: widget.isFreePhoto,
                     image: imageState.croppedFile,
                     freeImage: imageState.croppedFileFree,
                     onSelect: _bloC.updateFilter,
@@ -1601,4 +1374,18 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
           ],
         );
       });
+  Widget _closeButton() => IconButton(
+        onPressed: () {
+          showConfirmDialogCustom(context,
+              title: 'You edited image will be lost',
+              primaryColor: colorPrimary,
+              positiveText: 'Ok',
+              negativeText: 'Cancel', onAccept: (BuildContext context) async {
+            mIsText = false;
+            // appStore.isText = false;
+            Navigator.pop(context);
+          });
+        },
+        icon: const Icon(Icons.close),
+      );
 }

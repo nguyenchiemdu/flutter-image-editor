@@ -6,7 +6,7 @@ import 'package:image_editor/utils/SignatureLibWidget.dart';
 import '../models/StackedWidgetModel.dart';
 
 class ImageState {
-  GlobalKey imageKey = GlobalKey();
+  final GlobalKey imageKey;
 
   /// Image file picked from previous screen
   File? originalFile;
@@ -42,4 +42,31 @@ class ImageState {
 
   double? imageHeight;
   double? imageWidth;
+
+  ImageState({required this.imageKey, File? file})
+      : originalFile = file,
+        croppedFile = file;
+  void resetValues() {
+    brightness = 0.0;
+    saturation = 0.0;
+    hue = 0.0;
+    contrast = 0.0;
+    topWidgetHeight = 50;
+    bottomWidgetHeight = 80;
+    blur = 0;
+    isOuterBorder = true;
+    outerBorderwidth = 0.0;
+    outerBorderColor = Colors.black;
+    innerBorderwidth = 0.0;
+    innerBorderColor = Colors.black;
+    frame = null;
+    imageHeight = null;
+    imageWidth = null;
+    croppedFile = originalFile;
+    croppedFileFree = originalFileFree;
+    signatureController.clear();
+    points.clear();
+    mStackedWidgetList.clear();
+    filter = null;
+  }
 }

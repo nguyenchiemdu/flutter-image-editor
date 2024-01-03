@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_editor/blocs/photo_edit_blocs.dart';
 import 'package:image_editor/screens/PhotoEditScreen.dart';
+import 'package:image_editor/services/FileService.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:provider/provider.dart';
@@ -23,7 +24,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Image Editor'),
     );
   }
 }
@@ -38,8 +39,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  void _incrementCounter() async {
-    final File image = await pickImage();
+  void editImage() async {
+    final List<File> images = await pickMultipleImage();
     if (!mounted) return;
     Navigator.push(
         context,
@@ -48,7 +49,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 create: (_) => PhotoEditBloC(),
                 builder: (context, _) {
                   return PhotoEditScreen(
-                    file: image,
+                    files: images,
                   );
                 })));
   }
@@ -65,11 +66,9 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: const Center(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+      body: Center(
+        child: ElevatedButton(
+            onPressed: editImage, child: const Text("Pick Image")),
       ),
     );
   }

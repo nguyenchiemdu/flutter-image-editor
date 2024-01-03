@@ -3,14 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:nb_utils/nb_utils.dart';
 import '../../models/ColorFilterModel.dart';
 import '../../utils/DataProvider.dart';
-import '../utils/Common.dart';
 
 class FilterSelectionWidget extends StatefulWidget {
   static String tag = '/FilterSelectionWidget';
   final Function(ColorFilterModel)? onSelect;
   final File? image;
   final bool isAssets;
-  final bool isFreePhoto;
   final String? freeImage;
   final String? assetPath;
 
@@ -19,7 +17,6 @@ class FilterSelectionWidget extends StatefulWidget {
       this.onSelect,
       this.image,
       this.isAssets = false,
-      this.isFreePhoto = false,
       this.freeImage,
       this.assetPath});
 
@@ -50,12 +47,8 @@ class FilterSelectionWidgetState extends State<FilterSelectionWidget> {
               widget.isAssets
                   ? Image.asset(widget.assetPath.validate(), fit: BoxFit.cover)
                       .cornerRadiusWithClipRRect(defaultRadius)
-                  : widget.isFreePhoto
-                      ? cachedImage(widget.freeImage.validate(),
-                              fit: BoxFit.cover)
-                          .cornerRadiusWithClipRRect(defaultRadius)
-                      : Image.file(widget.image!, fit: BoxFit.cover)
-                          .cornerRadiusWithClipRRect(defaultRadius),
+                  : Image.file(widget.image!, fit: BoxFit.cover)
+                      .cornerRadiusWithClipRRect(defaultRadius),
               if (e.color != null)
                 Container(
                   decoration: BoxDecoration(
@@ -70,12 +63,8 @@ class FilterSelectionWidgetState extends State<FilterSelectionWidget> {
                       ? Image.asset(widget.assetPath.validate(),
                               fit: BoxFit.cover)
                           .cornerRadiusWithClipRRect(defaultRadius)
-                      : widget.isFreePhoto
-                          ? cachedImage(widget.freeImage.validate(),
-                                  fit: BoxFit.cover)
-                              .cornerRadiusWithClipRRect(defaultRadius)
-                          : Image.file(widget.image!, fit: BoxFit.cover)
-                              .cornerRadiusWithClipRRect(defaultRadius),
+                      : Image.file(widget.image!, fit: BoxFit.cover)
+                          .cornerRadiusWithClipRRect(defaultRadius),
                 ),
               Align(
                 alignment: Alignment.bottomCenter,
