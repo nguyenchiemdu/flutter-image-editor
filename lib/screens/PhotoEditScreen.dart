@@ -7,6 +7,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_editor/blocs/image_state.dart';
 import 'package:image_editor/blocs/photo_edit_blocs.dart';
 import 'package:image_editor/screens/photo_preview.dart';
+import 'package:image_editor/utils/Images.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nb_utils/nb_utils.dart';
@@ -51,7 +52,8 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
   bool mIsImageSaved = false;
 
   /// Used to save edited image on storage
-  ScreenshotController screenshotController = ScreenshotController();
+  late List<ScreenshotController> listScreenshotControllers =
+      List.generate(widget.files.length, (index) => ScreenshotController());
   final GlobalKey screenshotKey = GlobalKey();
   final GlobalKey galleryKey = GlobalKey();
 
@@ -110,30 +112,25 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
 
   @override
   void initState() {
-    WidgetsBinding.instance.addPostFrameCallback((_) => getImageSize());
+    WidgetsBinding.instance.addPostFrameCallback((_) => getImagesSize());
     setState(() {});
-
     super.initState();
     init();
   }
 
-  Future<void> getImageSize() async {
-    await Future.delayed(const Duration(seconds: 2));
-    final imageState = _bloC.currentImageState();
-    imageState.imageHeight = imageState.imageKey.currentContext!.size!.height;
-    imageState.imageWidth = imageState.imageKey.currentContext!.size!.width;
+  Future<void> getImagesSize() async {
+    final states = _bloC.listimageStatesCtrl.value;
+    final newStates = <ImageState>[];
+    final screenWidth = MediaQuery.of(context).size.width;
 
-    if (!mounted) return;
-    if ((imageState.imageHeight ?? 0).toInt() == 0) {
-      imageState.imageHeight = context.height();
-    }
-    if ((imageState.imageWidth ?? 0).toInt() == 0) {
-      imageState.imageWidth = context.width();
-    }
-    setState(() {});
-    // log(imageState.imageHeight);
-    // log(imageState.imageWidth);
-    _bloC.updateImageState(imageState);
+    await Future.wait(states.map((imageState) async {
+      final size =
+          await ImageUtil.calculateImageDimension(imageState.originalFile!);
+      imageState.imageWidth = screenWidth;
+      imageState.imageHeight = (screenWidth * size.height) / size.width;
+      newStates.add(imageState);
+    }));
+    _bloC.listimageStatesCtrl.add(newStates);
   }
 
   Future<void> init() async {
@@ -176,8 +173,8 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
     mIsHueSliderVisible = false;
     mIsContrastSliderVisible = false;
     setState(() {});
-
-    await screenshotController
+    final currentIndex = _bloC.currentImageIndex.value;
+    await listScreenshotControllers[currentIndex]
         .captureAndSave(await getFileSavePath(), delay: 1.seconds)
         .then((value) async {
       log('Saved : $value');
@@ -666,113 +663,126 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
       child: Scaffold(
         key: scaffoldKey,
         resizeToAvoidBottomInset: false,
-        body: StreamBuilder<List<ImageState>>(
-            stream: _bloC.imageStatesStream,
+        body: StreamBuilder<int>(
+            stream: _bloC.currentImageIndex.stream,
             builder: (context, snapshot) {
               if (!snapshot.hasData) return const SizedBox();
-              final imageStates = snapshot.data!;
-              final currentIndex = _bloC.currentImageIndex.value;
-              final imageState = imageStates[currentIndex];
-              return Stack(
-                children: [
-                  Column(
-                    children: [
-                      Container(
-                        height: imageState.topWidgetHeight,
-                        alignment: Alignment.center,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 0, vertical: 0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              final currentIndex = snapshot.data!;
+              return StreamBuilder<List<ImageState>>(
+                  stream: _bloC.imageStatesStream,
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) return const SizedBox();
+                    final imageStates = snapshot.data!;
+                    final imageState = imageStates[currentIndex];
+                    return Stack(
+                      children: [
+                        Column(
                           children: [
-                            _closeButton(),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                0.width,
-                                GestureDetector(
-                                  onTap: () => log('tap'),
-                                  onTapDown: (v) {
-                                    mShowBeforeImage = true;
-                                    setState(() {});
-                                  },
-                                  onTapUp: (v) {
-                                    mShowBeforeImage = false;
-                                    setState(() {});
-                                  },
-                                  onTapCancel: () {
-                                    mShowBeforeImage = false;
-                                    setState(() {});
-                                  },
-                                  child: const Icon(Icons.compare_rounded)
-                                      .paddingAll(0),
-                                ),
-                                // 16.width,
-                                Text(mIsText ? 'Done' : 'Save',
-                                        style:
-                                            boldTextStyle(color: colorPrimary))
-                                    .paddingSymmetric(
-                                        horizontal: 16, vertical: 8)
-                                    .withShaderMaskGradient(
-                                        const LinearGradient(colors: [
-                                      itemGradient1,
-                                      itemGradient2
-                                    ]))
-                                    .onTap(() async {
-                                  mIsText
-                                      ? setState(() {
-                                          mIsText = false;
-                                          // appStore.isText = false;
-                                          // appStore.isText = false;
-                                          mIsTextstyle = false;
-                                          mIsTextColor = false;
-                                          mIsTextBgColor = false;
-                                          mIsTextSize = false;
-                                        })
-                                      : checkPermissionAndCaptureImage();
-                                }, borderRadius: radius())
-                              ],
+                            Container(
+                              height: imageState.topWidgetHeight,
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 0, vertical: 0),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  _closeButton(),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      0.width,
+                                      GestureDetector(
+                                        onTap: () => log('tap'),
+                                        onTapDown: (v) {
+                                          mShowBeforeImage = true;
+                                          setState(() {});
+                                        },
+                                        onTapUp: (v) {
+                                          mShowBeforeImage = false;
+                                          setState(() {});
+                                        },
+                                        onTapCancel: () {
+                                          mShowBeforeImage = false;
+                                          setState(() {});
+                                        },
+                                        child: const Icon(Icons.compare_rounded)
+                                            .paddingAll(0),
+                                      ),
+                                      // 16.width,
+                                      Text(mIsText ? 'Done' : 'Save',
+                                              style: boldTextStyle(
+                                                  color: colorPrimary))
+                                          .paddingSymmetric(
+                                              horizontal: 16, vertical: 8)
+                                          .withShaderMaskGradient(
+                                              const LinearGradient(colors: [
+                                            itemGradient1,
+                                            itemGradient2
+                                          ]))
+                                          .onTap(() async {
+                                        mIsText
+                                            ? setState(() {
+                                                mIsText = false;
+                                                // appStore.isText = false;
+                                                // appStore.isText = false;
+                                                mIsTextstyle = false;
+                                                mIsTextColor = false;
+                                                mIsTextBgColor = false;
+                                                mIsTextSize = false;
+                                              })
+                                            : checkPermissionAndCaptureImage();
+                                      }, borderRadius: radius())
+                                    ],
+                                  ),
+                                ],
+                              ).paddingTop(0),
                             ),
-                          ],
-                        ).paddingTop(0),
-                      ),
-                      Stack(
-                        alignment: AlignmentDirectional.center,
-                        children: [
-                          // This widget will be saved as edited Image
-                          Screenshot(
-                              controller: screenshotController,
-                              key: screenshotKey,
-                              child: SizedBox(
-                                height: imageState.imageHeight,
-                                width: imageState.imageWidth,
-                                child: PageView.builder(
+                            Stack(
+                              alignment: AlignmentDirectional.center,
+                              children: [
+                                // This widget will be saved as edited Image
+                                PageView.builder(
                                     onPageChanged: (index) {
-                                      getImageSize();
+                                      context
+                                          .read<PhotoEditBloC>()
+                                          .changeCurrentImageIndex(index);
                                     },
                                     itemCount: widget.files.length,
                                     itemBuilder: (ctx, index) {
-                                      return PhotoPreview(
-                                        mIsPenEnabled: mIsPenEnabled,
-                                        index: index,
-                                        getImageSize: getImageSize,
+                                      return Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Screenshot(
+                                            controller:
+                                                listScreenshotControllers[
+                                                    index],
+                                            child: PhotoPreview(
+                                              mIsPenEnabled: mIsPenEnabled,
+                                              index: index,
+                                            ),
+                                          ),
+                                        ],
                                       );
                                     }),
-                              )),
 
-                          /// Show preview of edited image before save
-                          Image.file(imageState.croppedFile!, fit: BoxFit.cover)
-                              .visible(true)
-                              .visible(mShowBeforeImage),
-                        ],
-                      ).expand(),
-                      _editorBottomBar()
-                    ],
-                  ).paddingTop(context.statusBarHeight),
-                  // Observer(builder: (_) => Loader().visible(appStore.isLoading)),
-                ],
-              );
+                                /// Show preview of edited image before save
+                                Image.file(imageState.croppedFile!,
+                                        fit: BoxFit.cover)
+                                    .visible(true)
+                                    .visible(mShowBeforeImage),
+                              ],
+                            ).expand(),
+                            _editorBottomBar()
+                          ],
+                        ).paddingTop(context.statusBarHeight),
+                        // Observer(builder: (_) => Loader().visible(appStore.isLoading)),
+                      ],
+                    );
+                  });
             }),
       ),
     );

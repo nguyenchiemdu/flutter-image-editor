@@ -41,15 +41,11 @@ class SignatureWidgetState extends State<SignatureWidget> {
       onPanEnd: (DragEndDetails details) {
         widget.points!.add(null);
       },
-      child: ListView(
-        children: <Widget>[
-          Signature(
-            controller: widget.signatureController,
-            height: widget.height,
-            width: widget.width,
-            backgroundColor: Colors.transparent,
-          ),
-        ],
+      child: Signature(
+        controller: widget.signatureController,
+        height: widget.height,
+        width: widget.width,
+        backgroundColor: Colors.transparent,
       ),
     );
   }

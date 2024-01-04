@@ -11,13 +11,11 @@ import 'dart:ui' as ui;
 class PhotoPreview extends StatefulWidget {
   final bool mIsPenEnabled;
   final int index;
-  final VoidCallback? getImageSize;
-  const PhotoPreview(
-      {Key? key,
-      this.mIsPenEnabled = false,
-      required this.index,
-      this.getImageSize})
-      : super(key: key);
+  const PhotoPreview({
+    Key? key,
+    this.mIsPenEnabled = false,
+    required this.index,
+  }) : super(key: key);
 
   @override
   State<PhotoPreview> createState() => _PhotoPreviewState();
@@ -25,13 +23,6 @@ class PhotoPreview extends StatefulWidget {
 
 class _PhotoPreviewState extends State<PhotoPreview>
     with AutomaticKeepAliveClientMixin {
-  @override
-  void initState() {
-    context.read<PhotoEditBloC>().changeCurrentImageIndex(widget.index);
-    widget.getImageSize?.call();
-    super.initState();
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -43,9 +34,6 @@ class _PhotoPreviewState extends State<PhotoPreview>
           if (!snap.hasData) return const SizedBox();
           final imageStates = snap.data!;
           final imageState = imageStates[widget.index];
-          log(widget.index);
-          log(imageState.imageHeight);
-          log(imageState.imageWidth);
           return Container(
             color: Colors.red,
             height: imageState.imageHeight,
@@ -142,15 +130,17 @@ class _PhotoPreviewState extends State<PhotoPreview>
                             width: context.width()),
                       )
                     : const SizedBox(),
-                IgnorePointer(
-                  ignoring: !widget.mIsPenEnabled,
-                  child: SignatureWidget(
-                    signatureController: imageState.signatureController,
-                    points: imageState.points,
-                    width: context.width(),
-                    height: context.height() * 0.8,
+                if (imageState.imageWidth != null &&
+                    imageState.imageHeight != null)
+                  IgnorePointer(
+                    ignoring: !widget.mIsPenEnabled,
+                    child: SignatureWidget(
+                      signatureController: imageState.signatureController,
+                      points: imageState.points,
+                      width: imageState.imageWidth,
+                      height: imageState.imageHeight,
+                    ),
                   ),
-                ),
                 StackedWidgetComponent(imageState.mStackedWidgetList),
               ],
             ).center(),
