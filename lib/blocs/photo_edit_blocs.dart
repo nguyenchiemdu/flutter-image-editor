@@ -1,16 +1,27 @@
 import 'dart:ui';
 
-import 'package:image_editor/blocs/image_state.dart';
+import 'package:image_editor/blocs/states/editor_state.dart';
+import 'package:image_editor/blocs/states/image_state.dart';
 import 'package:image_editor/models/ColorFilterModel.dart';
 import 'package:image_editor/models/StackedWidgetModel.dart';
+import 'package:image_editor/utils/Constants.dart';
 import 'package:image_editor/utils/SignatureLibWidget.dart';
+import 'package:nb_utils/nb_utils.dart';
 import 'package:rxdart/subjects.dart';
 
 class PhotoEditBloC {
   final BehaviorSubject<List<ImageState>> listimageStatesCtrl =
       BehaviorSubject<List<ImageState>>();
   Stream<List<ImageState>> get imageStatesStream => listimageStatesCtrl.stream;
+
   final BehaviorSubject<int> currentImageIndex = BehaviorSubject<int>()..add(0);
+
+  final BehaviorSubject<EditorState> _editorStateCtrl =
+      BehaviorSubject<EditorState>()..add(EditorState());
+  Stream<EditorState> get editorStateStream => _editorStateCtrl.stream;
+
+  EditorState get editorState => _editorStateCtrl.value;
+
   void updateImageState(ImageState newState) {
     final currentIndex = currentImageIndex.value;
     final imageStates = listimageStatesCtrl.value;
@@ -26,17 +37,6 @@ class PhotoEditBloC {
     final currentIndex = currentImageIndex.value;
     final imageStates = listimageStatesCtrl.value;
     return imageStates[currentIndex];
-  }
-
-  void _clearBrightnessContrastSaturationHue() {
-    final imageState = currentImageState();
-    imageState
-      ..brightness = 0.0
-      ..saturation = 0.0
-      ..hue = 0.0
-      ..contrast = 0.0;
-
-    updateImageState(imageState);
   }
 
   void updateContrast(double value) {
@@ -77,48 +77,6 @@ class PhotoEditBloC {
   void updateFilter(ColorFilterModel filter) {
     final imageState = currentImageState();
     imageState.filter = filter;
-
-    updateImageState(imageState);
-  }
-
-  /// Clear blur effect
-  void _clearBlur() {
-    final imageState = currentImageState();
-    imageState.blur = 0;
-
-    updateImageState(imageState);
-  }
-
-  /// Clear signature
-  void _clearSignature() {
-    final imageState = currentImageState();
-    imageState.signatureController.clear();
-    imageState.points.clear();
-
-    updateImageState(imageState);
-  }
-
-  /// Clear stacked widgets
-  void _clearStackedWidgets() {
-    final imageState = currentImageState();
-    imageState.mStackedWidgetList.clear();
-
-    updateImageState(imageState);
-  }
-
-  /// Clear filter
-  void _clearFilter() {
-    final imageState = currentImageState();
-    imageState.filter = null;
-
-    updateImageState(imageState);
-  }
-
-  /// Border
-  void _clearBorder() {
-    final imageState = currentImageState();
-    imageState.outerBorderwidth = 0.0;
-    imageState.innerBorderwidth = 0.0;
 
     updateImageState(imageState);
   }
@@ -172,6 +130,9 @@ class PhotoEditBloC {
     final imageState = currentImageState();
     imageState.mStackedWidgetList.last.fontStyle = fontStyle;
 
+    editorState.mIsTextstyle = false;
+
+    _editorStateCtrl.add(editorState);
     updateImageState(imageState);
   }
 
@@ -194,14 +155,10 @@ class PhotoEditBloC {
     final imageState = currentImageState();
     imageState.signatureController = signatureController;
 
-    updateImageState(imageState);
-  }
+    editorState.mIsPenEnabled = true;
+    editorState.mIsPenColorVisible = false;
 
-  /// Frame
-  void _clearFrame() {
-    final imageState = currentImageState();
-    imageState.frame = null;
-
+    _editorStateCtrl.add(editorState);
     updateImageState(imageState);
   }
 
@@ -214,14 +171,363 @@ class PhotoEditBloC {
 
   void clearAllChanges() {
     final imageState = currentImageState();
-    imageState.resetValues();
 
+    imageState.resetValues();
+    editorState
+      ..mIsBlurVisible = false
+      ..mIsFilterViewVisible = false
+      ..mIsFrameVisible = false
+      ..mIsPenColorVisible = false
+      ..mIsBrightnessSliderVisible = false
+      ..mIsSaturationSliderVisible = false
+      ..mIsHueSliderVisible = false
+      ..mIsContrastSliderVisible = false
+      ..mIsBorderSliderVisible = false;
+
+    _editorStateCtrl.add(editorState);
     updateImageState(imageState);
+  }
+
+  /// Editor state change
+
+  onPenEnableChange(bool status) {
+    editorState.mIsPenEnabled = status;
+    editorState.mIsPenColorVisible = false;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  showBeforeImage() {
+    editorState.mShowBeforeImage = true;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  unShowBeforeImage() {
+    editorState.mShowBeforeImage = false;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  onContrastSliderClick() {
+    editorState.mIsPenColorVisible = false;
+    editorState.mIsBlurVisible = false;
+    editorState.mIsFilterViewVisible = false;
+    editorState.mIsFrameVisible = false;
+    editorState.mIsBrightnessSliderVisible = false;
+    editorState.mIsSaturationSliderVisible = false;
+    editorState.mIsHueSliderVisible = false;
+    editorState.mIsBorderSliderVisible = false;
+    editorState.mIsContrastSliderVisible =
+        !editorState.mIsContrastSliderVisible;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  onHueSliderClick() {
+    editorState.mIsPenColorVisible = false;
+    editorState.mIsBlurVisible = false;
+    editorState.mIsFilterViewVisible = false;
+    editorState.mIsFrameVisible = false;
+    editorState.mIsBrightnessSliderVisible = false;
+    editorState.mIsSaturationSliderVisible = false;
+    editorState.mIsContrastSliderVisible = false;
+    editorState.mIsBorderSliderVisible = false;
+    editorState.mIsHueSliderVisible = !editorState.mIsHueSliderVisible;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  onSaturationSliderClick() {
+    editorState
+      ..mIsPenColorVisible = false
+      ..mIsBlurVisible = false
+      ..mIsFilterViewVisible = false
+      ..mIsFrameVisible = false
+      ..mIsBrightnessSliderVisible = false
+      ..mIsHueSliderVisible = false
+      ..mIsContrastSliderVisible = false
+      ..mIsBorderSliderVisible = false
+      ..mIsSaturationSliderVisible = !editorState.mIsSaturationSliderVisible;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  onBrightnessSliderClick() {
+    editorState
+      ..mIsPenColorVisible = false
+      ..mIsBlurVisible = false
+      ..mIsFilterViewVisible = false
+      ..mIsFrameVisible = false
+      ..mIsSaturationSliderVisible = false
+      ..mIsHueSliderVisible = false
+      ..mIsContrastSliderVisible = false
+      ..mIsBorderSliderVisible = false
+      ..mIsBrightnessSliderVisible = !editorState.mIsBrightnessSliderVisible;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  onFrameClick() {
+    if (!getBoolAsync(IS_FRAME_REWARDED)) {
+      editorState
+        ..mIsPenColorVisible = false
+        ..mIsBlurVisible = false
+        ..mIsFilterViewVisible = false
+        ..mIsBrightnessSliderVisible = false
+        ..mIsSaturationSliderVisible = false
+        ..mIsHueSliderVisible = false
+        ..mIsContrastSliderVisible = false
+        ..mIsFrameVisible = !editorState.mIsFrameVisible;
+
+      _editorStateCtrl.add(editorState);
+    } else {
+      /*if (rewardedAd != null && await rewardedAd.isLoaded()) {
+        rewardedAd.show();
+
+        toast('Showing reward ad');
+      }*/
+    }
+  }
+
+  onBorderSliderClick() {
+    editorState
+      ..mIsPenColorVisible = false
+      ..mIsBlurVisible = false
+      ..mIsFilterViewVisible = false
+      ..mIsFrameVisible = false
+      ..mIsSaturationSliderVisible = false
+      ..mIsHueSliderVisible = false
+      ..mIsContrastSliderVisible = false
+      ..mIsBrightnessSliderVisible = false
+      ..mIsBorderSliderVisible = !editorState.mIsBorderSliderVisible;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  onTextTemplet() {
+    editorState
+      ..mIsFrameVisible = false
+      ..mIsPenColorVisible = false
+      ..mIsBlurVisible = false
+      ..mIsBrightnessSliderVisible = false
+      ..mIsSaturationSliderVisible = false
+      ..mIsHueSliderVisible = false
+      ..mIsContrastSliderVisible = false
+      ..mIsFilterViewVisible = false
+      ..mIsBorderSliderVisible = false;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  onShapeClick(StackedWidgetModel model) {
+    editorState
+      ..mIsFrameVisible = false
+      ..mIsPenColorVisible = false
+      ..mIsBlurVisible = false
+      ..mIsBrightnessSliderVisible = false
+      ..mIsSaturationSliderVisible = false
+      ..mIsHueSliderVisible = false
+      ..mIsContrastSliderVisible = false
+      ..mIsFilterViewVisible = false
+      ..mIsBorderSliderVisible = false;
+
+    _editorStateCtrl.add(editorState);
+    addText(model);
+  }
+
+  onFilterClick() {
+    editorState
+      ..mIsFrameVisible = false
+      ..mIsPenColorVisible = false
+      ..mIsBlurVisible = false
+      ..mIsBrightnessSliderVisible = false
+      ..mIsSaturationSliderVisible = false
+      ..mIsHueSliderVisible = false
+      ..mIsContrastSliderVisible = false
+      ..mIsBorderSliderVisible = false
+      ..mIsFilterViewVisible = !editorState.mIsFilterViewVisible;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  onBlurClick() {
+    editorState
+      ..mIsFilterViewVisible = false
+      ..mIsFrameVisible = false
+      ..mIsPenColorVisible = false
+      ..mIsBrightnessSliderVisible = false
+      ..mIsSaturationSliderVisible = false
+      ..mIsHueSliderVisible = false
+      ..mIsContrastSliderVisible = false
+      ..mIsBorderSliderVisible = false
+      ..mIsBlurVisible = !editorState.mIsBlurVisible;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  void onPenClick() {
+    editorState
+      ..mIsBlurVisible = false
+      ..mIsFilterViewVisible = false
+      ..mIsFrameVisible = false
+      ..mIsBrightnessSliderVisible = false
+      ..mIsSaturationSliderVisible = false
+      ..mIsHueSliderVisible = false
+      ..mIsContrastSliderVisible = false
+      ..mIsBorderSliderVisible = false
+      ..mIsPenColorVisible = !editorState.mIsPenColorVisible;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  void onEditorStickerClick() {
+    editorState
+      ..mIsBlurVisible = false
+      ..mIsFilterViewVisible = false
+      ..mIsFrameVisible = false
+      ..mIsPenColorVisible = false
+      ..mIsBrightnessSliderVisible = false
+      ..mIsSaturationSliderVisible = false
+      ..mIsHueSliderVisible = false
+      ..mIsContrastSliderVisible = false
+      ..mIsBorderSliderVisible = false;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  void onEditorEmojiClick() {
+    editorState
+      ..mIsBlurVisible = false
+      ..mIsFilterViewVisible = false
+      ..mIsFrameVisible = false
+      ..mIsPenColorVisible = false
+      ..mIsBrightnessSliderVisible = false
+      ..mIsSaturationSliderVisible = false
+      ..mIsHueSliderVisible = false
+      ..mIsContrastSliderVisible = false
+      ..mIsBorderSliderVisible = false;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  void onEditorNeonLightClick() {
+    editorState
+      ..mIsBlurVisible = false
+      ..mIsFilterViewVisible = false
+      ..mIsFrameVisible = false
+      ..mIsPenColorVisible = false
+      ..mIsBrightnessSliderVisible = false
+      ..mIsSaturationSliderVisible = false
+      ..mIsHueSliderVisible = false
+      ..mIsContrastSliderVisible = false
+      ..mIsText = true
+      ..mIsBorderSliderVisible = false;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  void onEditorTextClick() {
+    editorState
+      ..mIsBlurVisible = false
+      ..mIsFilterViewVisible = false
+      ..mIsFrameVisible = false
+      ..mIsPenColorVisible = false
+      ..mIsBrightnessSliderVisible = false
+      ..mIsSaturationSliderVisible = false
+      ..mIsHueSliderVisible = false
+      ..mIsContrastSliderVisible = false
+      ..mIsText = true
+      ..mIsBorderSliderVisible = false;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  onEditorCapture() {
+    editorState
+      ..mIsBlurVisible = false
+      ..mIsFilterViewVisible = false
+      ..mIsFrameVisible = false
+      ..mIsPenColorVisible = false
+      ..mIsBrightnessSliderVisible = false
+      ..mIsSaturationSliderVisible = false
+      ..mIsHueSliderVisible = false
+      ..mIsContrastSliderVisible = false;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  changeMoreConfigWidgetVisible(bool status) {
+    editorState.mIsMoreConfigWidgetVisible = status;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  //Text Editor state
+  onTextStyle() {
+    editorState.mIsTextstyle = !editorState.mIsTextstyle;
+    editorState.mIsTextColor = false;
+    editorState.mIsTextBgColor = false;
+    editorState.mIsTextSize = false;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  onTextFontSizeTap() {
+    editorState.mIsTextSize = !editorState.mIsTextSize;
+    editorState.mIsTextColor = false;
+    editorState.mIsTextstyle = false;
+    editorState.mIsTextBgColor = false;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  onTextBgColorTap() {
+    editorState.mIsTextBgColor = !editorState.mIsTextBgColor;
+    editorState.mIsTextColor = false;
+    editorState.mIsTextstyle = false;
+    editorState.mIsTextSize = false;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  onTextColorTap() {
+    editorState.mIsTextColor = !editorState.mIsTextColor;
+    editorState.mIsTextBgColor = false;
+    editorState.mIsTextstyle = false;
+    editorState.mIsTextSize = false;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  onTextRemoveTap() {
+    editorState.mIsTextColor = false;
+    editorState.mIsTextBgColor = false;
+    editorState.mIsTextstyle = false;
+    editorState.mIsTextSize = false;
+
+    _editorStateCtrl.add(editorState);
+  }
+
+  closeTextEditor() {
+    editorState.mIsText = false;
+    _editorStateCtrl.add(editorState);
+  }
+
+  onTextEditorDone() {
+    editorState.mIsText = false;
+    editorState.mIsTextstyle = false;
+    editorState.mIsTextColor = false;
+    editorState.mIsTextBgColor = false;
+    editorState.mIsTextSize = false;
+
+    _editorStateCtrl.add(editorState);
   }
 
   void dispose() {
     listimageStatesCtrl.close();
     currentImageIndex.close();
+    _editorStateCtrl.close();
 
     for (var e in listimageStatesCtrl.value) {
       e.signatureController.dispose();

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
@@ -31,7 +30,7 @@ const frame24 = 'images/frame/frame24.png';
 const frame25 = 'images/frame/frame25.png';
 const frame26 = 'images/frame/frame26.png';
 const frame27 = 'images/frame/frame27.png';
-const ic_premium = 'images/ic_premium.png';
+const icPremium = 'images/ic_premium.png';
 
 String wallpaper1 =
     'https://firebasestorage.googleapis.com/v0/b/photo-editor-2cf30.appspot.com/o/1.jpeg?alt=media&token=0a7c1b44-15f1-4319-af5b-c86b879bd333';

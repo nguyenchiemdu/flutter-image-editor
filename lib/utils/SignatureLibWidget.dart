@@ -138,7 +138,7 @@ class _SignaturePainter extends CustomPainter {
   _SignaturePainter(this._controller)
       : _penStyle = Paint(),
         super(repaint: _controller) {
-    _penStyle..strokeWidth = _controller!.penStrokeWidth;
+    _penStyle.strokeWidth = _controller!.penStrokeWidth;
   }
 
   final SignatureController? _controller;

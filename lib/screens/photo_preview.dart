@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:image_editor/blocs/image_state.dart';
+import 'package:image_editor/blocs/states/image_state.dart';
 import 'package:image_editor/blocs/photo_edit_blocs.dart';
 import 'package:image_editor/components/ImageFilterWidget.dart';
 import 'package:image_editor/components/SignatureWidget.dart';
@@ -34,8 +34,7 @@ class _PhotoPreviewState extends State<PhotoPreview>
           if (!snap.hasData) return const SizedBox();
           final imageStates = snap.data!;
           final imageState = imageStates[widget.index];
-          return Container(
-            color: Colors.red,
+          return SizedBox(
             height: imageState.imageHeight,
             width: imageState.imageWidth,
             child: Stack(
@@ -59,31 +58,18 @@ class _PhotoPreviewState extends State<PhotoPreview>
                     : Stack(
                         alignment: Alignment.center,
                         children: [
-                          Container(
-                            decoration: BoxDecoration(
-                                border: Border.all(
-                                    width: imageState.outerBorderwidth,
-                                    color: imageState.outerBorderColor)),
-                            child: ImageFilterWidget(
-                              brightness: imageState.brightness,
-                              saturation: imageState.saturation,
-                              hue: imageState.hue,
-                              contrast: imageState.contrast,
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  Image.file(imageState.croppedFile!,
-                                      fit: BoxFit.fitWidth,
-                                      key: imageState.imageKey),
-                                  Container(
-                                      decoration: BoxDecoration(
-                                          border: Border.all(
-                                              color: imageState.innerBorderColor
-                                                  .withOpacity(0.5),
-                                              width:
-                                                  imageState.innerBorderwidth)))
-                                ],
-                              ),
+                          ImageFilterWidget(
+                            brightness: imageState.brightness,
+                            saturation: imageState.saturation,
+                            hue: imageState.hue,
+                            contrast: imageState.contrast,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Image.file(imageState.croppedFile!,
+                                    fit: BoxFit.fitWidth,
+                                    key: imageState.imageKey),
+                              ],
                             ),
                           ),
                           if (imageState.filter != null &&
@@ -110,17 +96,6 @@ class _PhotoPreviewState extends State<PhotoPreview>
                         color: Colors.grey.withOpacity(0.1)),
                   ),
                 ),
-                /*(filter != null && filter!.color != null)
-                                    ? Container(
-                                        //height: context.height(),
-                                        width: context.width(),
-                                        color: Colors.black12,
-                                        child: SizedBox(),
-                                      ).withShaderMaskGradient(
-                                        LinearGradient(colors: filter!.color!, begin: Alignment.topLeft, end: Alignment.bottomRight),
-                                        blendMode: BlendMode.srcOut,
-                                      )
-                                    : SizedBox(),*/
                 imageState.frame != null
                     ? Container(
                         color: Colors.black12,

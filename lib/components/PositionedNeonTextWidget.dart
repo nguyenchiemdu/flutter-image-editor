@@ -57,6 +57,8 @@ class PositionedTextViewWidgetState extends State<PositionedNeonTextWidget>
             widget.value!,
             textAlign: widget.align,
             style: TextStyle(
+              fontStyle:
+                  widget.stackedWidgetModel?.fontStyle ?? FontStyle.normal,
               fontSize: widget.fontSize,
               color: widget.stackedWidgetModel?.textColor ?? Colors.deepPurple,
               fontFamily: FontNeonLights,

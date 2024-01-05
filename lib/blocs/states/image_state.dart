@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_editor/models/ColorFilterModel.dart';
 import 'package:image_editor/utils/SignatureLibWidget.dart';
-import '../models/StackedWidgetModel.dart';
+import '../../models/StackedWidgetModel.dart';
 
 class ImageState {
   final GlobalKey imageKey;
@@ -46,6 +46,7 @@ class ImageState {
   ImageState({required this.imageKey, File? file})
       : originalFile = file,
         croppedFile = file;
+
   void resetValues() {
     brightness = 0.0;
     saturation = 0.0;
