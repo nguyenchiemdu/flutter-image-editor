@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:nb_utils/nb_utils.dart';
-import '../../utils/DataProvider.dart';
+import '../utils/data_provider.dart';
 
-import '../main.dart';
+class TextTemplatePickerBottomSheet extends StatefulWidget {
+  static String tag = '/TextTemplatePickerBottomSheet';
 
-class EmojiPickerBottomSheet extends StatefulWidget {
-  static String tag = '/EmojiPickerBottomSheet';
-
-  const EmojiPickerBottomSheet({super.key});
+  const TextTemplatePickerBottomSheet({super.key});
 
   @override
-  EmojiPickerBottomSheetState createState() => EmojiPickerBottomSheetState();
+  TextTemplatePickerBottomSheetState createState() =>
+      TextTemplatePickerBottomSheetState();
 }
 
-class EmojiPickerBottomSheetState extends State<EmojiPickerBottomSheet> {
+class TextTemplatePickerBottomSheetState
+    extends State<TextTemplatePickerBottomSheet> {
   @override
   void initState() {
     super.initState();
@@ -35,33 +35,33 @@ class EmojiPickerBottomSheetState extends State<EmojiPickerBottomSheet> {
       height: 400,
       width: context.width(),
       decoration: boxDecorationWithRoundedCorners(
-          borderRadius: const BorderRadius.only(
-              topRight: Radius.circular(12), topLeft: Radius.circular(12)),
-          backgroundColor: Colors.white),
+        borderRadius: const BorderRadius.only(
+            topRight: Radius.circular(12), topLeft: Radius.circular(12)),
+      ),
       child: Stack(
-        alignment: Alignment.topLeft,
         children: [
           SingleChildScrollView(
-            padding: const EdgeInsets.only(top: 8, left: 8),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Text('Select Emoji', style: boldTextStyle()),
-                // 16.height,
                 48.height,
                 Wrap(
-                  children: getSmileys().map(
+                  alignment: WrapAlignment.spaceEvenly,
+                  runAlignment: WrapAlignment.spaceEvenly,
+                  crossAxisAlignment: WrapCrossAlignment.start,
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: getTextTemplate().map(
                     (e) {
-                      return Container(
-                              padding: const EdgeInsets.all(2),
-                              child:
-                                  Text(e, style: const TextStyle(fontSize: 35)))
+                      return Image.asset(e,
+                              width: context.width() / 3 - 32, height: 100)
                           .onTap(() {
                         finish(context, e);
                       });
                     },
                   ).toList(),
-                ),
+                ).center(),
               ],
             ),
           ),
@@ -73,12 +73,12 @@ class EmojiPickerBottomSheetState extends State<EmojiPickerBottomSheet> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Select Emoji', style: boldTextStyle()),
+                Text('Select Sticker', style: boldTextStyle()),
                 const Icon(Icons.clear, color: Colors.black).onTap(() {
                   finish(context);
                 })
               ],
-            ).paddingSymmetric(horizontal: 8, vertical: 16),
+            ).paddingSymmetric(horizontal: 16, vertical: 16),
           ),
         ],
       ),

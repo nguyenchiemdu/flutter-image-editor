@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nb_utils/nb_utils.dart';
-import '../../utils/SignatureLibWidget.dart';
+import '../utils/signature_lib_widget.dart';
 
 // ignore: must_be_immutable
 class SignatureWidget extends StatefulWidget {

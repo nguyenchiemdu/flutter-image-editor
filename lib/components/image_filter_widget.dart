@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../utils/ColorFilterGenerator.dart';
+import '../utils/color_filter_generator.dart';
 
 class ImageFilterWidget extends StatelessWidget {
   final double? brightness;

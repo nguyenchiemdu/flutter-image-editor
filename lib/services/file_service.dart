@@ -9,7 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../../utils/Colors.dart';
+import '../utils/app_colors.dart';
 
 Future<File> pickImage({ImageSource? imageSource}) async {
   XFile? pickedFile =

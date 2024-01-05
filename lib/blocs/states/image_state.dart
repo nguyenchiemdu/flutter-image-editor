@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:image_editor/models/ColorFilterModel.dart';
-import 'package:image_editor/utils/SignatureLibWidget.dart';
-import '../../models/StackedWidgetModel.dart';
+import 'package:image_editor/models/color_filter_model.dart';
+import 'package:image_editor/utils/signature_lib_widget.dart';
+import '../../models/stacked_widget_model.dart';
 
 class ImageState {
   final GlobalKey imageKey;

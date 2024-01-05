@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:image_editor/blocs/states/image_state.dart';
 import 'package:image_editor/blocs/photo_edit_blocs.dart';
-import 'package:image_editor/components/ImageFilterWidget.dart';
-import 'package:image_editor/components/SignatureWidget.dart';
-import 'package:image_editor/components/StackedWidgetComponent.dart';
+import 'package:image_editor/components/image_filter_widget.dart';
+import 'package:image_editor/components/signature_widget.dart';
+import 'package:image_editor/components/stacked_widget_component.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:provider/provider.dart';
 import 'dart:ui' as ui;

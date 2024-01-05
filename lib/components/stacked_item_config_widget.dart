@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:nb_utils/nb_utils.dart';
-import '../../models/FontData.dart';
-import '../../models/StackedWidgetModel.dart';
-import '../../utils/Colors.dart';
-import '../../utils/Constants.dart';
-import '../../utils/DataProvider.dart';
+import '../models/font_data.dart';
+import '../models/stacked_widget_model.dart';
+import '../utils/app_colors.dart';
+import '../utils/data_provider.dart';
 
-import 'ColorSelectorBottomSheet.dart';
+import 'color_selector_bottom_sheet.dart';
 
 // ignore: must_be_immutable
 class StackedItemConfigWidget extends StatefulWidget {
@@ -30,7 +29,7 @@ class StackedItemConfigWidgetState extends State<StackedItemConfigWidget> {
   @override
   void initState() {
     super.initState();
-    if (widget.stackedWidgetModel!.widgetType == WidgetTypeImage) {
+    if (widget.stackedWidgetModel!.isImage) {
       _textEditingController.text =
           widget.stackedWidgetModel!.file!.path.validate();
     } else {
@@ -44,16 +43,11 @@ class StackedItemConfigWidgetState extends State<StackedItemConfigWidget> {
   @override
   Widget build(BuildContext context) {
     bool isTextTypeWidget =
-        widget.stackedWidgetModel!.widgetType.validate() == WidgetTypeNeon ||
-            widget.stackedWidgetModel!.widgetType.validate() == WidgetTypeText;
-    bool isTextWidget =
-        widget.stackedWidgetModel!.widgetType.validate() == WidgetTypeText;
-    // bool isNeonWidget = widget.stackedWidgetModel!.widgetType.validate() == WidgetTypeNeon;
-    // bool isEmojiWidget = widget.stackedWidgetModel!.widgetType.validate() == WidgetTypeEmoji;
-    bool isStickerWidget = widget.stackedWidgetModel!.widgetType.validate() ==
-            WidgetTypeSticker ||
-        widget.stackedWidgetModel!.widgetType.validate() == WidgetTypeImage ||
-        widget.stackedWidgetModel!.widgetType.validate() == WidgetTypeContainer;
+        widget.stackedWidgetModel!.isNeon || widget.stackedWidgetModel!.isText;
+    bool isTextWidget = widget.stackedWidgetModel!.isText;
+    bool isStickerWidget = widget.stackedWidgetModel!.isSticker ||
+        widget.stackedWidgetModel!.isImage ||
+        widget.stackedWidgetModel!.isContainer;
 
     return Container(
       margin: const EdgeInsets.only(top: 32),
@@ -61,7 +55,7 @@ class StackedItemConfigWidgetState extends State<StackedItemConfigWidget> {
       decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: radiusOnly(topLeft: 16, topRight: 16)),
-      child: widget.stackedWidgetModel!.widgetType == WidgetTypeTextTemplate
+      child: widget.stackedWidgetModel!.isTextTemplate
           ? Stack(
               alignment: Alignment.topLeft,
               children: [
@@ -162,9 +156,8 @@ class StackedItemConfigWidgetState extends State<StackedItemConfigWidget> {
                               setState(() {});
                             },
                           ).paddingLeft(16),
-                          Text(
-                              '${widget.stackedWidgetModel!.fontSize!.toInt()}' +
-                                  '%'),
+                          Text('${widget.stackedWidgetModel!.fontSize!.toInt()}'
+                              '%'),
                         ],
                       ),
                       16.height,
@@ -209,7 +202,7 @@ class StackedItemConfigWidgetState extends State<StackedItemConfigWidget> {
                               setState(() {});
                             },
                           ).paddingLeft(16),
-                          Text('${widget.stackedWidgetModel!.size!.toInt()}' +
+                          Text('${widget.stackedWidgetModel!.size!.toInt()}'
                               '%'),
                         ],
                       ),
@@ -343,7 +336,7 @@ class StackedItemConfigWidgetState extends State<StackedItemConfigWidget> {
                               setState(() {});
                             },
                           ).paddingLeft(16),
-                          Text('${widget.stackedWidgetModel!.size!.toInt()}' +
+                          Text('${widget.stackedWidgetModel!.size!.toInt()}'
                               '%'),
                         ],
                       ),

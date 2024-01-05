@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nb_utils/nb_utils.dart';
-import '../../models/StackedWidgetModel.dart';
-import '../../utils/Constants.dart';
+import '../models/stacked_widget_model.dart';
+import '../utils/app_constants.dart';
 
 class PositionedNeonTextWidget extends StatefulWidget {
   final double? left;
@@ -61,7 +61,7 @@ class PositionedTextViewWidgetState extends State<PositionedNeonTextWidget>
                   widget.stackedWidgetModel?.fontStyle ?? FontStyle.normal,
               fontSize: widget.fontSize,
               color: widget.stackedWidgetModel?.textColor ?? Colors.deepPurple,
-              fontFamily: FontNeonLights,
+              fontFamily: fontNeonLights,
               letterSpacing: 5.0,
               shadows: [
                 BoxShadow(

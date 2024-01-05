@@ -4,20 +4,20 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_editor/blocs/photo_edit_blocs.dart';
 import 'package:image_editor/blocs/states/editor_state.dart';
 import 'package:image_editor/blocs/states/image_state.dart';
-import 'package:image_editor/components/BlurSelectorBottomSheet.dart';
-import 'package:image_editor/components/BottomBarItemWidget.dart';
-import 'package:image_editor/components/ColorSelectorBottomSheet.dart';
-import 'package:image_editor/components/EmojiPickerBottomSheet.dart';
-import 'package:image_editor/components/FilterSelectionWidget.dart';
-import 'package:image_editor/components/FrameSelectionWidget.dart';
-import 'package:image_editor/components/StickerPickerBottomSheet.dart';
-import 'package:image_editor/components/TextEditorDialog.dart';
-import 'package:image_editor/components/TextTemplatePickerBottomSheet.dart';
-import 'package:image_editor/models/StackedWidgetModel.dart';
+import 'package:image_editor/components/blur_selector_bottom_sheet.dart';
+import 'package:image_editor/components/bottom_bar_item_widget.dart';
+import 'package:image_editor/components/color_selector_bottom_sheet.dart';
+import 'package:image_editor/components/emoji_picker_bottom_sheet.dart';
+import 'package:image_editor/components/filter_selection_widget.dart';
+import 'package:image_editor/components/frame_selection_widget.dart';
+import 'package:image_editor/components/sticker_picker_bottom_sheet.dart';
+import 'package:image_editor/components/text_editor_dialog.dart';
+import 'package:image_editor/components/text_template_picker_bottom_sheet.dart';
+import 'package:image_editor/models/stacked_widget_model.dart';
 import 'package:image_editor/screens/widgets/text_editor_tool_bar.dart';
-import 'package:image_editor/utils/Colors.dart';
-import 'package:image_editor/utils/Constants.dart';
-import 'package:image_editor/utils/SignatureLibWidget.dart';
+import 'package:image_editor/utils/app_colors.dart';
+import 'package:image_editor/utils/app_constants.dart';
+import 'package:image_editor/utils/signature_lib_widget.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:provider/provider.dart';
 
@@ -52,7 +52,7 @@ class _EditorBottomBarState extends State<EditorBottomBar> {
     if (text.validate().isNotEmpty) {
       var stackedWidgetModel = StackedWidgetModel(
         value: text,
-        widgetType: WidgetTypeText,
+        widgetType: StackedWidgetType.text,
         offset: const Offset(100, 100),
         size: 20,
         backgroundColor: Colors.transparent,
@@ -73,7 +73,7 @@ class _EditorBottomBarState extends State<EditorBottomBar> {
     if (text.validate().isNotEmpty) {
       var stackedWidgetModel = StackedWidgetModel(
         value: text,
-        widgetType: WidgetTypeNeon,
+        widgetType: StackedWidgetType.neon,
         offset: const Offset(100, 100),
         size: 40,
         backgroundColor: Colors.transparent,
@@ -96,7 +96,7 @@ class _EditorBottomBarState extends State<EditorBottomBar> {
     if (emoji.validate().isNotEmpty) {
       var stackedWidgetModel = StackedWidgetModel(
         value: emoji,
-        widgetType: WidgetTypeEmoji,
+        widgetType: StackedWidgetType.emoji,
         offset: const Offset(100, 100),
         size: 50,
       );
@@ -118,7 +118,7 @@ class _EditorBottomBarState extends State<EditorBottomBar> {
     if (sticker.validate().isNotEmpty) {
       var stackedWidgetModel = StackedWidgetModel(
           value: sticker,
-          widgetType: WidgetTypeSticker,
+          widgetType: StackedWidgetType.sticker,
           offset: const Offset(100, 100),
           size: 100);
       _bloC.addText(stackedWidgetModel);
@@ -137,7 +137,7 @@ class _EditorBottomBarState extends State<EditorBottomBar> {
       String? text =
           await showInDialog(context, builder: (_) => const TextEditorDialog());
       var stackedWidgetModel = StackedWidgetModel(
-          widgetType: WidgetTypeTextTemplate,
+          widgetType: StackedWidgetType.textTemplate,
           imageName: textTamplet,
           offset: const Offset(100, 100),
           size: 120,
@@ -632,7 +632,7 @@ class _EditorBottomBarState extends State<EditorBottomBar> {
                             onTap: _bloC.onBorderSliderClick),
                         BottomBarItemWidget(
                           title: 'Frame',
-                          icons: !getBoolAsync(IS_FRAME_REWARDED)
+                          icons: !getBoolAsync(isFrameRewarded)
                               ? const Icon(Icons.filter_frames).icon
                               : const Icon(Icons.lock_outline_rounded).icon,
                           onTap: _bloC.onFrameClick,

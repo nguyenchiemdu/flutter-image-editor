@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nb_utils/nb_utils.dart';
-import '../../utils/DataProvider.dart';
-
-import '../main.dart';
+import '../utils/data_provider.dart';
 
 class StickerPickerBottomSheet extends StatefulWidget {
   static String tag = '/StickerPickerBottomSheet';

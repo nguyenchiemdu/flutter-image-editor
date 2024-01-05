@@ -1,12 +1,11 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:nb_utils/nb_utils.dart';
-import '../../models/StackedWidgetModel.dart';
-import '../../utils/Constants.dart';
+import '../models/stacked_widget_model.dart';
 
-import 'PositionedNeonTextWidget.dart';
-import 'PositionedTextViewWidget.dart';
-import 'StackedItemConfigWidget.dart';
+import 'positioned_neon_text_widget.dart';
+import 'positioned_text_view_widget.dart';
+import 'stacked_item_config_widget.dart';
 
 class StackedWidgetComponent extends StatefulWidget {
   static String tag = '/StackedWidgetComponent';
@@ -24,7 +23,7 @@ class StackedWidgetComponentState extends State<StackedWidgetComponent> {
     return Stack(
       clipBehavior: Clip.antiAliasWithSaveLayer,
       children: widget.multiWidget.map((item) {
-        if (item.widgetType == WidgetTypeText) {
+        if (item.isText) {
           return PositionedTextViewWidget(
             value: item.value.validate(),
             left: item.offset!.dx,
@@ -52,7 +51,7 @@ class StackedWidgetComponentState extends State<StackedWidgetComponent> {
               setState(() {});
             },
           );
-        } else if (item.widgetType == WidgetTypeEmoji) {
+        } else if (item.isEmoji) {
           return PositionedTextViewWidget(
             value: item.value.validate(),
             left: item.offset!.dx,
@@ -81,7 +80,7 @@ class StackedWidgetComponentState extends State<StackedWidgetComponent> {
               setState(() {});
             },
           );
-        } else if (item.widgetType == WidgetTypeNeon) {
+        } else if (item.isNeon) {
           return PositionedNeonTextWidget(
             value: item.value.validate(),
             left: item.offset!.dx,
@@ -90,7 +89,7 @@ class StackedWidgetComponentState extends State<StackedWidgetComponent> {
             fontSize: item.size,
             stackedWidgetModel: item,
             onTap: () async {
-              var data = showModalBottomSheet<dynamic>(
+              var data = await showModalBottomSheet<StackedWidgetModel>(
                 context: context,
                 isScrollControlled: true,
                 builder: (_) => StackedItemConfigWidget(
@@ -112,7 +111,7 @@ class StackedWidgetComponentState extends State<StackedWidgetComponent> {
               setState(() {});
             },
           );
-        } else if (item.widgetType == WidgetTypeSticker) {
+        } else if (item.isSticker) {
           return Positioned(
             left: item.offset!.dx,
             top: item.offset!.dy,
@@ -140,7 +139,7 @@ class StackedWidgetComponentState extends State<StackedWidgetComponent> {
               child: Image.asset(item.value!, height: item.size),
             ),
           );
-        } else if (item.widgetType == WidgetTypeImage) {
+        } else if (item.isImage) {
           return Positioned(
             left: item.offset!.dx,
             top: item.offset!.dy,
@@ -168,7 +167,7 @@ class StackedWidgetComponentState extends State<StackedWidgetComponent> {
               child: Image.file(item.file!, width: item.size),
             ),
           );
-        } else if (item.widgetType == WidgetTypeContainer) {
+        } else if (item.isContainer) {
           return Positioned(
             left: item.offset!.dx,
             top: item.offset!.dy,
@@ -215,7 +214,7 @@ class StackedWidgetComponentState extends State<StackedWidgetComponent> {
               // Container(width: item.size,height: item.size,decoration:BoxDecoration(color: Colors.white.withOpacity(0.5),shape:item.shape!)),
             ),
           );
-        } else if (item.widgetType == WidgetTypeTextTemplate) {
+        } else if (item.isTextTemplate) {
           return Positioned(
             left: item.offset!.dx,
             top: item.offset!.dy,

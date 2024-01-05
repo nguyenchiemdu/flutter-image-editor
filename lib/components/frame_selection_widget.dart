@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nb_utils/nb_utils.dart';
-import '../../utils/DataProvider.dart';
+import '../utils/data_provider.dart';
 
 class FrameSelectionWidget extends StatefulWidget {
   static String tag = '/FrameSelectionWidget';

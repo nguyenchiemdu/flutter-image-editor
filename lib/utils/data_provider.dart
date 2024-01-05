@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../models/CollegeMakerModel.dart';
-import '../../models/ColorFilterModel.dart';
-import '../../models/FontData.dart';
-import '../../models/FrameModel.dart';
-import './Images.dart';
+import '../models/college_maker_model.dart';
+import '../models/color_filter_model.dart';
+import '../models/font_data.dart';
+import '../models/frame_model.dart';
+import 'images.dart';
 
 List<String> getSmileys() {
   List emojis = <String>[];

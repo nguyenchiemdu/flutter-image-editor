@@ -2,10 +2,10 @@ import 'dart:ui';
 
 import 'package:image_editor/blocs/states/editor_state.dart';
 import 'package:image_editor/blocs/states/image_state.dart';
-import 'package:image_editor/models/ColorFilterModel.dart';
-import 'package:image_editor/models/StackedWidgetModel.dart';
-import 'package:image_editor/utils/Constants.dart';
-import 'package:image_editor/utils/SignatureLibWidget.dart';
+import 'package:image_editor/models/color_filter_model.dart';
+import 'package:image_editor/models/stacked_widget_model.dart';
+import 'package:image_editor/utils/app_constants.dart';
+import 'package:image_editor/utils/signature_lib_widget.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:rxdart/subjects.dart';
 
@@ -269,7 +269,7 @@ class PhotoEditBloC {
   }
 
   onFrameClick() {
-    if (!getBoolAsync(IS_FRAME_REWARDED)) {
+    if (!getBoolAsync(isFrameRewarded)) {
       editorState
         ..mIsPenColorVisible = false
         ..mIsBlurVisible = false

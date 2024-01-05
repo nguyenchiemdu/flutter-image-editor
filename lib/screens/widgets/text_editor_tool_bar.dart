@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_editor/blocs/photo_edit_blocs.dart';
 import 'package:image_editor/blocs/states/editor_state.dart';
-import 'package:image_editor/components/BottomBarItemWidget.dart';
-import 'package:image_editor/components/TextEditorDialog.dart';
+import 'package:image_editor/components/bottom_bar_item_widget.dart';
+import 'package:image_editor/components/text_editor_dialog.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:provider/provider.dart';
 

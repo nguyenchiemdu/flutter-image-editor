@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 class ColorFilterModel {
@@ -9,5 +8,6 @@ class ColorFilterModel {
   BlendMode? blendMode;
   Color? filterColor;
 
-  ColorFilterModel({this.name, this.color, this.blendMode, this.filterColor, this.matrix});
+  ColorFilterModel(
+      {this.name, this.color, this.blendMode, this.filterColor, this.matrix});
 }

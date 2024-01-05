@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nb_utils/nb_utils.dart';
-import '../../utils/Colors.dart';
+import '../utils/app_colors.dart';
 
 class TextEditorDialog extends StatefulWidget {
   static String tag = '/AddTextDialog';
@@ -16,7 +16,6 @@ class _TextEditorDialogState extends State<TextEditorDialog> {
   @override
   void initState() {
     super.initState();
-    // TODO: implement initState
     if (widget.text != null) {
       name.text = widget.text!;
     }

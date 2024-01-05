@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_editor/blocs/photo_edit_blocs.dart';
-import 'package:image_editor/screens/PhotoEditScreen.dart';
-import 'package:image_editor/services/FileService.dart';
+import 'package:image_editor/screens/photo_edit_screen.dart';
+import 'package:image_editor/services/file_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:provider/provider.dart';

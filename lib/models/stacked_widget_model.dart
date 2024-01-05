@@ -1,8 +1,9 @@
+
 import 'package:flutter/material.dart';
 import 'dart:io';
 
 class StackedWidgetModel {
-  String? widgetType;
+  StackedWidgetType? widgetType;
   String? imageName;
   String? value;
   Offset? offset;
@@ -31,4 +32,22 @@ class StackedWidgetModel {
     this.imageName,
     this.fontSize,
   });
+
+  bool get isText => widgetType == StackedWidgetType.text;
+  bool get isEmoji => widgetType == StackedWidgetType.emoji;
+  bool get isNeon => widgetType == StackedWidgetType.neon;
+  bool get isSticker => widgetType == StackedWidgetType.sticker;
+  bool get isImage => widgetType == StackedWidgetType.image;
+  bool get isContainer => widgetType == StackedWidgetType.container;
+  bool get isTextTemplate => widgetType == StackedWidgetType.textTemplate;
+}
+
+enum StackedWidgetType {
+  text,
+  emoji,
+  neon,
+  sticker,
+  image,
+  container,
+  textTemplate,
 }

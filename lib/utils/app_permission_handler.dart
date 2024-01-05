@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '/../utils/Colors.dart';
+import 'app_colors.dart';
 
 Future<void> checkPermission(BuildContext context,
     {Function()? func, isShowSubtitle = true, String name = "image"}) async {

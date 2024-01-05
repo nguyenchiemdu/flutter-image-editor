@@ -1,7 +1,8 @@
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:nb_utils/nb_utils.dart';
-import '../../models/StackedWidgetModel.dart';
+import '../models/stacked_widget_model.dart';
 
 class PositionedTextViewWidget extends StatefulWidget {
   final double? left;
