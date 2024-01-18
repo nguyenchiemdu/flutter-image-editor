@@ -24,11 +24,11 @@ class Topbar extends StatelessWidget {
   Future<void> checkPermissionAndCaptureImage(
       BuildContext context, PhotoEditBloC bloC) async {
     checkPermission(context, func: () {
-      capture(bloC).whenComplete(() => log("done"));
+      _capture(bloC).whenComplete(() => log("done"));
     });
   }
 
-  Future<void> capture(PhotoEditBloC bloC) async {
+  Future<void> _capture(PhotoEditBloC bloC) async {
     bloC.onEditorCapture();
     final currentIndex = bloC.currentImageIndex.value;
     await listScreenshotControllers[currentIndex]
@@ -75,7 +75,6 @@ class Topbar extends StatelessWidget {
                 },
                 child: const Icon(Icons.compare_rounded).paddingAll(0),
               ),
-              // 16.width,
               Text(editorState.mIsText ? 'Done' : 'Save',
                       style: boldTextStyle(color: colorPrimary))
                   .paddingSymmetric(horizontal: 16, vertical: 8)

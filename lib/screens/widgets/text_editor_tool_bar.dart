@@ -7,8 +7,10 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:provider/provider.dart';
 
 class TextEditorToolBar extends StatefulWidget {
-  const TextEditorToolBar({required this.scrollController, super.key});
+  const TextEditorToolBar(
+      {required this.editorState, required this.scrollController, super.key});
   final ScrollController scrollController;
+  final EditorState editorState;
 
   @override
   State<TextEditorToolBar> createState() => _TextEditorToolBarState();
@@ -16,6 +18,7 @@ class TextEditorToolBar extends StatefulWidget {
 
 class _TextEditorToolBarState extends State<TextEditorToolBar> {
   late final _bloC = context.read<PhotoEditBloC>();
+  late final EditorState editorState = widget.editorState;
 
   onTextEditClick() async {
     final imageState = _bloC.currentImageState();
@@ -61,26 +64,18 @@ class _TextEditorToolBarState extends State<TextEditorToolBar> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<EditorState>(
-        stream: _bloC.editorStateStream,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const SizedBox();
-          }
-          final editorState = snapshot.data!;
-          return ListView(
-            controller: widget.scrollController,
-            scrollDirection: Axis.horizontal,
-            children: [
-              ...listButton.map((e) {
-                return BottomBarItemWidget(
-                  title: e['title'],
-                  icons: e['icons'],
-                  onTap: e['onTap'],
-                );
-              }).toList(),
-            ],
-          ).visible(editorState.mIsText);
-        });
+    return ListView(
+      controller: widget.scrollController,
+      scrollDirection: Axis.horizontal,
+      children: [
+        ...listButton.map((e) {
+          return BottomBarItemWidget(
+            title: e['title'],
+            icons: e['icons'],
+            onTap: e['onTap'],
+          );
+        }).toList(),
+      ],
+    ).visible(editorState.mIsText);
   }
 }

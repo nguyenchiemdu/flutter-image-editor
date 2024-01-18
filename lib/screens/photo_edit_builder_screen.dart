@@ -12,26 +12,34 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 
-class PhotoEditScreen extends StatefulWidget {
+class PhotoEditBuilderScreen extends StatefulWidget {
   final List<File> files;
-  final Widget Function(ImageState imageState, EditorState editorState)?
-      topbarBuilder;
-  final Widget Function(ImageState imageState, EditorState editorState)?
-      bottombarBuilder;
-  const PhotoEditScreen(
+  final Color? backgroundColor;
+  final Topbar Function(
+    ImageState imageState,
+    EditorState editorState,
+    List<ScreenshotController> listScreenshotControllers,
+  )? topbarBuilder;
+  final EditorBottomBar Function(
+    EditorState editorState,
+    ImageState imageState,
+    ScrollController scrollController,
+  )? editorBottomBarBuilder;
+  const PhotoEditBuilderScreen(
       {this.topbarBuilder,
-      this.bottombarBuilder,
+      this.editorBottomBarBuilder,
+      this.backgroundColor,
       super.key,
       required this.files});
 
   @override
-  PhotoEditScreenState createState() => PhotoEditScreenState();
+  PhotoEditBuilderScreenState createState() => PhotoEditBuilderScreenState();
 }
 
-class PhotoEditScreenState extends State<PhotoEditScreen> {
+class PhotoEditBuilderScreenState extends State<PhotoEditBuilderScreen> {
   late final _bloC = context.read<PhotoEditBloC>();
   final GlobalKey scaffoldKey = GlobalKey<ScaffoldState>();
-  final GlobalKey key = GlobalKey<PhotoEditScreenState>();
+  final GlobalKey key = GlobalKey<PhotoEditBuilderScreenState>();
   final ScrollController scrollController = ScrollController();
 
   DateTime? currentBackPressTime;
@@ -111,6 +119,7 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
     return WillPopScope(
       onWillPop: onWillPop,
       child: Scaffold(
+        backgroundColor: widget.backgroundColor,
         key: scaffoldKey,
         resizeToAvoidBottomInset: false,
         body: _streamBuilderWrapper(({
@@ -121,7 +130,8 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
             children: [
               Column(
                 children: [
-                  widget.topbarBuilder?.call(imageState, editorState) ??
+                  widget.topbarBuilder?.call(
+                          imageState, editorState, listScreenshotControllers) ??
                       Topbar(
                         imageState: imageState,
                         editorState: editorState,
@@ -168,11 +178,13 @@ class PhotoEditScreenState extends State<PhotoEditScreen> {
                         final imageStates = snapshot.data!;
                         final currentIndex = _bloC.currentImageIndex.value;
                         final imageState = imageStates[currentIndex];
-                        return EditorBottomBar(
-                          editorState: editorState,
-                          imageState: imageState,
-                          scrollController: scrollController,
-                        );
+                        return widget.editorBottomBarBuilder?.call(
+                                editorState, imageState, scrollController) ??
+                            EditorBottomBar(
+                              editorState: editorState,
+                              imageState: imageState,
+                              scrollController: scrollController,
+                            );
                       })
                 ],
               ).paddingTop(context.statusBarHeight),

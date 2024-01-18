@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_editor/blocs/photo_edit_blocs.dart';
-import 'package:image_editor/screens/photo_edit_screen.dart';
+import 'package:image_editor/editor_custom_screen.dart';
 import 'package:image_editor/services/file_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nb_utils/nb_utils.dart';
@@ -48,7 +48,7 @@ class _MyHomePageState extends State<MyHomePage> {
             builder: (_) => Provider<PhotoEditBloC>(
                 create: (_) => PhotoEditBloC(),
                 builder: (context, _) {
-                  return PhotoEditScreen(
+                  return EditorCustomScreen(
                     files: images,
                   );
                 })));
